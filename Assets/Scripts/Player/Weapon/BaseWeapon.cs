@@ -22,12 +22,12 @@ public abstract class BaseWeapon : MonoBehaviour, IWeapon
     }
 
     // For storing custom weapon states
-    protected virtual void UpdateCurrentWeaponState(byte newWeaponState)
+    public virtual void UpdateCurrentWeaponState(byte newWeaponState)
     {
         WeaponState = newWeaponState;
     }
 
-    protected virtual byte GetCurrentWeaponState()
+    public virtual byte GetCurrentWeaponState()
     {
         return WeaponState;
     }

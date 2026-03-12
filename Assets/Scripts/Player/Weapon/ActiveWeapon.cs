@@ -29,6 +29,7 @@ public class ActiveWeapon : MonoBehaviour
         newWeapon.transform.localRotation = Quaternion.identity;
         currentActiveWeapon = newWeapon.GetComponent<BaseWeapon>();
         currentActiveWeapon.SetPlayer(playerController);
+        currentActiveWeapon.InstantiateWeapon();
         transform.localPosition = new Vector3(testWeapon.instantiationOffset.x, testWeapon.instantiationOffset.y, 0f);
     }
 
@@ -41,12 +42,20 @@ public class ActiveWeapon : MonoBehaviour
         }
     }
 
-    public void Attack()
+    public bool Attack(bool remoteServerAttack = false)
     {
-        if (attackCoroutine != null) return; // If a coroutine is already running, then don't start another attack coroutine
-        if (!currentActiveWeapon) return; // If player is not holding a weapon then return
+        // If the attack is coming from the remote server, then we don't need to check for cooldown or weapon state
+        if (remoteServerAttack)
+        {
+            currentActiveWeapon.Attack();
+            return true;
+        }
+
+        if (attackCoroutine != null) return false; // If a coroutine is already running, then don't start another attack coroutine
+        if (!currentActiveWeapon) return false; // If player is not holding a weapon then return
 
         attackCoroutine = StartCoroutine(AttackCDRoutine());
+        return true;
     }
 
     private IEnumerator AttackCDRoutine()
@@ -74,5 +83,25 @@ public class ActiveWeapon : MonoBehaviour
         float angle = Mathf.Atan2(directionFromPlayer.y, Mathf.Abs(directionFromPlayer.x)) * Mathf.Rad2Deg;
 
         return angle;
+    }
+
+    public void UpdateWeaponState(byte weaponState)
+    {
+        if (!currentActiveWeapon) {
+            Debug.LogError("No active weapon found");
+            return;
+        }
+
+        currentActiveWeapon.UpdateCurrentWeaponState(weaponState);
+    }
+
+    public byte GetCurrentWeaponState()
+    {
+        if (!currentActiveWeapon) {
+            Debug.LogError("No active weapon found");
+            return 0;
+        }
+
+        return currentActiveWeapon.GetCurrentWeaponState();
     }
 }

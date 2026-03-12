@@ -40,6 +40,12 @@ MonoBehaviour:
   - DashEndRPC
   - DashRPC
   - UpdateWeapon
+  - ApplyDamageAndKnockback
+  - AttackRPC
+  - UpdateWeaponStateRPC
+  - AttackRemote
+  - RPC_KnockbackEnd
+  - RPC_KnockbackStart
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 1

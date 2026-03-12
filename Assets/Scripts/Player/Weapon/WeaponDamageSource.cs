@@ -7,6 +7,7 @@ public class WeaponDamageSource : DamageSource
 
     public void UpdateDamageSource(WeaponInfo weaponInfo, GameObject player)
     {
+        Debug.Log("Updating damage source for player: " + player.name);
         this.weaponInfo = weaponInfo;
         this.player = player;
     }
@@ -19,6 +20,7 @@ public class WeaponDamageSource : DamageSource
         }
         if (collision.gameObject == player) return;
         IHittable hittableGameObject = collision.gameObject.GetComponent<IHittable>();
-        hittableGameObject?.TakeDamage(weaponInfo.weaponDamage, player.transform);
+        Debug.Log("Dealing damage: " + weaponInfo.weaponDamage);
+        hittableGameObject?.TakeDamage(weaponInfo.weaponDamage, player.transform, weaponInfo.knockbackForce, weaponInfo.knockbackDuration);
     }
 }

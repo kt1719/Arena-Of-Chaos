@@ -18,7 +18,7 @@ public class SwordSlash : MonoBehaviour
         slashAnim = Instantiate(slashAnimPrefab, slashAnimSpawnPoint.transform.position, transform.parent.rotation);
         slashAnim.parent = transform;
 
-        if ((SwordWeapon.SwordSwipe) swordWeapon.WeaponState == SwordWeapon.SwordSwipe.Up)
+        if ((SwordWeapon.SwordSwipe) swordWeapon.WeaponState == SwordWeapon.SwordSwipe.Down)
         {
             SwingUpFlipAnim();
         }

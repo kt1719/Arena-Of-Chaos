@@ -9,11 +9,26 @@ public class PlayerVisuals : MonoBehaviourPunCallbacks
 
     private Animator animator;
     private SpriteRenderer spriteRenderer;
+    private PlayerHittable playerHittable;
 
     private void Start()
     {
         animator = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        playerHittable = GetComponentInParent<PlayerHittable>();
+        if (playerHittable != null)
+            playerHittable.OnHitReceived += OnHitReceived;
+    }
+
+    private void OnDestroy()
+    {
+        if (playerHittable != null)
+            playerHittable.OnHitReceived -= OnHitReceived;
+    }
+
+    private void OnHitReceived(int damage, Vector3 sourcePosition)
+    {
+        // Optional: trigger a "Hit" animator parameter if you add one, e.g. animator.SetTrigger("Hit");
     }
 
     private void Update()
@@ -52,6 +67,9 @@ public class PlayerVisuals : MonoBehaviourPunCallbacks
                 break;
             case PlayerState.Move:
                 animator.SetBool(ANIMATOR_MOVE_STRING_HASH, true);
+                break;
+            case PlayerState.Knockback:
+                animator.SetBool(ANIMATOR_MOVE_STRING_HASH, false);
                 break;
         }
     }

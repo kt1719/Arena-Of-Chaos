@@ -8,9 +8,6 @@ public class PUNNetworkManager : MonoBehaviourPunCallbacks
 
     private void Start()
     {
-        Debug.Log(PhotonNetwork.SendRate);
-        Debug.Log(PhotonNetwork.SerializationRate);
-
         PhotonNetwork.SendRate = 30;
         PhotonNetwork.SerializationRate = 30;
         

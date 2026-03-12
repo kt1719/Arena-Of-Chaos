@@ -24,6 +24,7 @@ public class SwordWeaponVisual : MonoBehaviour
     private void SwordWeapon_OnPlayerAttack()
     {
         animator.SetTrigger(ATTACK_TRIGGER_STRING_HASH);
+        Debug.Log("Setting sword collider active");
         swordCollider.gameObject.SetActive(true);
     }
 

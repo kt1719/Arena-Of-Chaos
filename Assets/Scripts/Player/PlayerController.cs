@@ -9,9 +9,37 @@ public class PlayerController : MonoBehaviourPunCallbacks
     public PlayerState PlayerState { get; private set; }
     public bool FacingLeft { get; private set; }
 
+    [SerializeField] private PlayerHittable _playerHittable;
+    [SerializeField] private PlayerMovement _playerMovement;
+
+    private void Start()
+    {
+        _playerHittable.OnHitReceived += OnHitReceived;
+        _playerMovement.OnKnockbackEnded += OnKnockbackEnded;
+    }
+
+    private void OnDestroy()
+    {
+        _playerHittable.OnHitReceived -= OnHitReceived;
+        _playerMovement.OnKnockbackEnded -= OnKnockbackEnded;
+    }
+
+    private void OnHitReceived(int damage, Vector3 sourcePosition) => SetState(PlayerState.Knockback);
+    private void OnKnockbackEnded() => SetState(PlayerState.Idle);
+
+    /// <summary>Set state from external events (e.g. knockback). Use for Knockback / Idle when hit starts and ends.</summary>
+    public void SetState(PlayerState newState)
+    {
+        if (newState == PlayerState) return;
+        OnPlayerStateChanged?.Invoke(newState);
+        PlayerState = newState;
+    }
+
     private void Update()
     {
         if (!photonView.IsMine) return;
+
+        if (PlayerState == PlayerState.Knockback) return;
 
         PlayerControllerInput input = GetPlayerInput();
         CalculatePlayerState(input);
