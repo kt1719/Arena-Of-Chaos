@@ -44,7 +44,7 @@ public class PlayerTest : NetworkBehaviour
 
   public override void FixedUpdateNetwork()
   {
-    if (GetInput(out NetworkInputData data))
+    if (GetInput(out NetworkInputDataTest data))
     {
       data.direction.Normalize();
       _cc.Move(5*data.direction*Runner.DeltaTime);
@@ -54,7 +54,7 @@ public class PlayerTest : NetworkBehaviour
 
       if (HasStateAuthority && delay.ExpiredOrNotRunning(Runner))
       {
-        if (data.buttons.IsSet(NetworkInputData.MOUSEBUTTON0))
+        if (data.buttons.IsSet(NetworkInputDataTest.MOUSEBUTTON0))
         {
           delay = TickTimer.CreateFromSeconds(Runner, 0.5f);
             Runner.Spawn(_prefabBall,
@@ -66,7 +66,7 @@ public class PlayerTest : NetworkBehaviour
             });
             spawnedProjectile = !spawnedProjectile;
         }
-        else if (data.buttons.IsSet(NetworkInputData.MOUSEBUTTON1))
+        else if (data.buttons.IsSet(NetworkInputDataTest.MOUSEBUTTON1))
         {
             delay = TickTimer.CreateFromSeconds(Runner, 0.5f);
             Runner.Spawn(_prefabPhysxBall,

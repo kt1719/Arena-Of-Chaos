@@ -9,12 +9,11 @@ using UnityEngine.UI;
 
 public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 {
-    [SerializeField] private NetworkRunner _runner;
     [SerializeField] private NetworkPrefabRef _playerPrefab;
     [SerializeField] private Button _startGameHostButton;
     [SerializeField] private Button _startGameClientButton;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
-
+    private NetworkRunner _runner;
     private void Start() {
         _startGameHostButton.onClick.AddListener(StartGameHost);
         _startGameClientButton.onClick.AddListener(StartGameClient);
@@ -33,8 +32,8 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
         _runner = gameObject.AddComponent<NetworkRunner>();
         _runner.ProvideInput = true;
 
-        var runnerSimulatePhysics3D = gameObject.AddComponent<RunnerSimulatePhysics3D>();
-        runnerSimulatePhysics3D.ClientPhysicsSimulation = ClientPhysicsSimulation.SimulateForward;
+        var runnerSimulatePhysics2D = gameObject.AddComponent<RunnerSimulatePhysics2D>();
+        runnerSimulatePhysics2D.ClientPhysicsSimulation = ClientPhysicsSimulation.SimulateForward;
 
         // Create the NetworkSceneInfo from the current scene
         var scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex);
@@ -65,10 +64,28 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
         }
     }
 
+    public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) {
+        if (_spawnedCharacters.TryGetValue(player, out NetworkObject networkObject))
+        {
+            runner.Despawn(networkObject);
+            _spawnedCharacters.Remove(player);
+        }
+    }
+
+    public void OnInput(NetworkRunner runner, NetworkInput input) {
+        // Get the movement input
+        NetworkInputData data = new NetworkInputData();
+
+        Vector2 movementInput = GameInput.Instance.GetMovementInput();
+        data.movementDirection = new Vector2(movementInput.x, movementInput.y);
+
+        input.Set(data);
+    }
+
     // Callbacks
     // public void OnPlayerJoined(NetworkRunner runner, PlayerRef player) { }
-    public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) { }
-    public void OnInput(NetworkRunner runner, NetworkInput input) { }
+    // public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) { }
+    // public void OnInput(NetworkRunner runner, NetworkInput input) { }
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }
     public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
     public void OnConnectedToServer(NetworkRunner runner) { }
