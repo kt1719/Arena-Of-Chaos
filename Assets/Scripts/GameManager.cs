@@ -1,17 +1,8 @@
-using System;
-using Photon.Pun;
+using Fusion;
+using Fusion.Addons.Physics;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-public class GameManager : MonoBehaviourPunCallbacks
+public class GameManager : MonoBehaviour
 {
-    public event Action<GameObject> OnPlayerSpawned;
-
-    [SerializeField] private GameObject playerPrefab;
-
-    public override void OnJoinedRoom()
-    {
-        GameObject player = PhotonNetwork.Instantiate(playerPrefab.name, Vector3.zero, Quaternion.identity);
-
-        OnPlayerSpawned?.Invoke(player);
-    }
 }
