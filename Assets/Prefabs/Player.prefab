@@ -351,7 +351,8 @@ MonoBehaviour:
   SortKey: 2807307307
   ObjectInterest: 1
   Flags: 262145
-  NestedObjects: []
+  NestedObjects:
+  - {fileID: 5175127442612191155}
   NetworkedBehaviours:
   - {fileID: 8940772853052481637}
   - {fileID: 217004648115528771}
@@ -386,6 +387,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f2b99e031e7743639a100ffda85995e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  _testWeapon: {fileID: 11400000, guid: 5e0b533e0dfc4428ca4b33f57a780fe3, type: 2}
+  _activeWeaponTransform: {fileID: 5175127442612191155}
 --- !u!114 &5557956582610753161
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -672,13 +675,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 320821883046928762}
+  - component: {fileID: 5175127442612191155}
   m_Layer: 0
   m_Name: ActiveWeapon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &320821883046928762
 Transform:
   m_ObjectHideFlags: 0
@@ -694,3 +698,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 3382695425509765507}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5175127442612191155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7831067526944541029}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+  SortKey: 1837308798
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours: []
+  ForceRemoteRenderTimeframe: 0
