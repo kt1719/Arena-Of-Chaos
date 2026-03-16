@@ -18,22 +18,25 @@ public abstract class BaseWeapon : NetworkBehaviour {
 
     public override void Spawned() {
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+
+        if (weaponParent != null) {
+            transform.parent = weaponParent.transform;
+            transform.localPosition = new Vector3(weaponInstantiationOffset.x, weaponInstantiationOffset.y, 0);
+        }
     }
 
     public override void Render() {
-        // foreach (var change in _changeDetector.DetectChanges(this)) {
-        //     switch (change) {
-        //         case nameof(weaponParent):
-        //             transform.parent = weaponParent != null ? weaponParent.transform : null;
-        //             transform.localPosition = new Vector3(weaponInstantiationOffset.x, weaponInstantiationOffset.y, 0);
-        //             break;
-        //     }
-        // }
-        Debug.Log($"weaponParent: {weaponParent}, offset: {weaponInstantiationOffset}");
-        transform.parent = weaponParent != null ? weaponParent.transform : null;
-        transform.localPosition = new Vector3(weaponInstantiationOffset.x, weaponInstantiationOffset.y, 0);
+        foreach (var change in _changeDetector.DetectChanges(this)) {
+            switch (change) {
+                case nameof(weaponParent):
+                    transform.parent = weaponParent != null ? weaponParent.transform : null;
+                    transform.localPosition = new Vector3(weaponInstantiationOffset.x, weaponInstantiationOffset.y, 0);
+                    break;
+            }
+        }
     }
 
+    // Called before Spawned()
     public void Init(Vector2 weaponInstantiationOffset, NetworkObject weaponParent) {
         this.weaponParent = weaponParent;
         this.weaponInstantiationOffset = new Vector3(weaponInstantiationOffset.x, weaponInstantiationOffset.y, 0);
