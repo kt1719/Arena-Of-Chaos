@@ -37,7 +37,18 @@ public class PlayerMovement : NetworkBehaviour
     }
     public override void Render()
     {
-
+        foreach (var change in _changeDetector.DetectChanges(this))
+        {
+            switch (change)
+            {
+                case nameof(_isDashing):
+                    if (_isDashing)
+                        OnDashStart?.Invoke();
+                    else
+                        OnDashEnd?.Invoke();
+                    break;
+            }
+        }
     }
 
     public void Init() {
@@ -84,7 +95,6 @@ public class PlayerMovement : NetworkBehaviour
                     _moveSpeed = _originalMoveSpeed * _dashSpeedMultiplier;
                         _dashCurrentDuration = 0;
                         _isDashing = true;
-                        OnDashStart?.Invoke();
                     }
                 }
                 break;
@@ -95,6 +105,5 @@ public class PlayerMovement : NetworkBehaviour
         _moveSpeed = _originalMoveSpeed;
         _isDashing = false;
         _dashCurrentCooldown = _dashTotalCooldown;
-        OnDashEnd?.Invoke();
     }
 }

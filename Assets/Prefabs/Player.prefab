@@ -371,8 +371,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   _originalMoveSpeed: 5
   _dashSpeedMultiplier: 4
-  _dashTotalDuration: 0.5
-  _dashTotalCooldown: 1
+  _dashTotalDuration: 0.3
+  _dashTotalCooldown: 0.1
 --- !u!114 &4923285046338211585
 MonoBehaviour:
   m_ObjectHideFlags: 0
