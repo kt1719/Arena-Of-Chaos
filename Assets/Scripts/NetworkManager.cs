@@ -33,7 +33,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
         _runner.ProvideInput = true;
 
         var runnerSimulatePhysics2D = gameObject.AddComponent<RunnerSimulatePhysics2D>();
-        runnerSimulatePhysics2D.ClientPhysicsSimulation = ClientPhysicsSimulation.SimulateForward;
+        runnerSimulatePhysics2D.ClientPhysicsSimulation = ClientPhysicsSimulation.SimulateAlways;
 
         // Create the NetworkSceneInfo from the current scene
         var scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex);
@@ -75,8 +75,9 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     public void OnInput(NetworkRunner runner, NetworkInput input) {
         // Get the movement input
         NetworkInputData data = new NetworkInputData();
-
+        
         Vector2 movementInput = GameInput.Instance.GetMovementInput();
+
         data.movementDirection = new Vector2(movementInput.x, movementInput.y);
 
         input.Set(data);

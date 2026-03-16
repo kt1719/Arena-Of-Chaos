@@ -1,11 +1,17 @@
+using System;
 using Fusion;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerMovement : NetworkBehaviour
 {
-    [Header("Networked Properties")]
+    // ===== Networked Properties =====
     [Networked] private float _moveSpeed { get; set; } = 5f;
+
+    // ===== Events =====
+    public event Action OnDashStart;
+    public event Action OnDashEnd;
+    
+    // ===== Private Variables =====
 
     private Rigidbody2D _rb;
     private ChangeDetector _changeDetector;
@@ -21,16 +27,19 @@ public class PlayerMovement : NetworkBehaviour
     {
 
     }
-    public override void FixedUpdateNetwork()
-    {
-        MovePlayer(Runner.DeltaTime);
-    }
 
-    private void MovePlayer(float deltaTime)
+    public override void FixedUpdateNetwork()
     {
         if (GetInput(out NetworkInputData data))
         {
-            _rb.MovePosition(_rb.position + data.movementDirection * _moveSpeed * deltaTime);
+            Vector2 movementDirection = data.movementDirection.normalized;
+
+            MovePlayer(movementDirection);
         }
+    }
+
+    private void MovePlayer(Vector2 movementDirection)
+    {
+        _rb.linearVelocity = movementDirection * _moveSpeed;
     }
 }
