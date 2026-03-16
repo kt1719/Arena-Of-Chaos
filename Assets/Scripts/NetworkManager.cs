@@ -9,11 +9,24 @@ using UnityEngine.UI;
 
 public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 {
+    // ===== Static Reference =====
+    public static NetworkManager Instance { get; private set; }
+    
+    // ===== Serialized Fields =====
     [SerializeField] private NetworkPrefabRef _playerPrefab;
     [SerializeField] private Button _startGameHostButton;
     [SerializeField] private Button _startGameClientButton;
+
+    // ===== Private Fields =====
+    private PlayerController _localPlayerController;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
     private NetworkRunner _runner;
+
+    // ===== Unity Methods =====
+
+    private void Awake() {
+        Instance = this;
+    }
     private void Start() {
         _startGameHostButton.onClick.AddListener(StartGameHost);
         _startGameClientButton.onClick.AddListener(StartGameClient);
@@ -52,6 +65,10 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
         });
     }
 
+    public void RegisterLocalPlayer(PlayerController playerController) {
+        _localPlayerController = playerController;
+    }
+
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
         if (runner.IsServer)
@@ -73,14 +90,19 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     }
 
     public void OnInput(NetworkRunner runner, NetworkInput input) {
-        // Get the movement input
-        NetworkInputData data = new NetworkInputData();
-        
-        Vector2 movementInput = GameInput.Instance.GetMovementInput();
+        // If the local player is not set, return
+        if (_localPlayerController == null) {
+            return;
+        }
 
-        data.movementDirection = new Vector2(movementInput.x, movementInput.y);
+        NetworkInputData data = new NetworkInputData();
+        data.movementDirection = _localPlayerController.LocalInputData.movementDirection;
+        data.buttons.Set(NetworkInputData.DASH_BUTTON, _localPlayerController.LocalInputData.isDashing);
 
         input.Set(data);
+
+        // Now it's safe to clear the dash flag
+        _localPlayerController.ConsumeInput();
     }
 
     // Callbacks

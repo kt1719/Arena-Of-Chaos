@@ -15,16 +15,16 @@ public class PlayerTrail : MonoBehaviour
 
     private void Start()
     {
-        playerMovement.OnDashStart += PlayerController_OnDashStart;
-        playerMovement.OnDashEnd += PlayerController_OnDashEnd;
+        playerMovement.OnDashStart += OnDashStart;
+        playerMovement.OnDashEnd += OnDashEnd;
     }
 
-    private void PlayerController_OnDashEnd()
+    private void OnDashEnd()
     {
         trailRenderer.emitting = false;
     }
 
-    private void PlayerController_OnDashStart()
+    private void OnDashStart()
     {
         trailRenderer.emitting = true;
     }

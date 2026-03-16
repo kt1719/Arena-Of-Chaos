@@ -211,6 +211,7 @@ GameObject:
   - component: {fileID: -2570748241238014948}
   - component: {fileID: 217004648115528771}
   - component: {fileID: 4923285046338211585}
+  - component: {fileID: 5557956582610753161}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -311,7 +312,7 @@ Rigidbody2D:
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 1
-  m_Constraints: 0
+  m_Constraints: 4
 --- !u!114 &8940772853052481637
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -354,6 +355,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 8940772853052481637}
   - {fileID: 217004648115528771}
+  - {fileID: 5557956582610753161}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &217004648115528771
 MonoBehaviour:
@@ -367,6 +369,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: edab2f1bb40f44a9e84ac896bfb9d1e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  _originalMoveSpeed: 5
+  _dashSpeedMultiplier: 4
+  _dashTotalDuration: 0.5
+  _dashTotalCooldown: 1
 --- !u!114 &4923285046338211585
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -379,6 +385,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f2b99e031e7743639a100ffda85995e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+--- !u!114 &5557956582610753161
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2855595555570944877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5609689075b044dde8121f37fe708259, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerController
 --- !u!1 &3580509502522206772
 GameObject:
   m_ObjectHideFlags: 0
@@ -389,6 +407,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1509045727248597180}
   - component: {fileID: 527065029040074180}
+  - component: {fileID: 7698754567880947161}
   m_Layer: 0
   m_Name: PlayerTrail
   m_TagString: Untagged
@@ -539,6 +558,19 @@ TrailRenderer:
   m_Autodestruct: 0
   m_Emitting: 1
   m_ApplyActiveColorSpace: 1
+--- !u!114 &7698754567880947161
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3580509502522206772}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4850cba3f6f7541f391cbe0d71ead196, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  playerMovement: {fileID: 217004648115528771}
 --- !u!1 &4432789215624535167
 GameObject:
   m_ObjectHideFlags: 0
