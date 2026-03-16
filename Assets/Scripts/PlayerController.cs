@@ -4,43 +4,57 @@ using UnityEngine;
 
 public class PlayerController : NetworkBehaviour
 {
-    public PlayerControllerLocalInputData LocalInputData { get; private set; }
+    private PlayerControllerLocalInputData _localInputData;
 
     public override void Spawned() {
         if (HasInputAuthority) {
             // This is OUR player on this client
             NetworkManager.Instance.RegisterLocalPlayer(this);
 
-            GameInput.Instance.OnPlayerDash += OnPlayerDash;
+            GameInput.Instance.OnPlayerDash += DashPressed;
+            GameInput.Instance.OnPlayerAttack += AttackPressed;
+            GameInput.Instance.OnPlayerCancelAttack += AttackReleased;
         }
     }
     
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
-        GameInput.Instance.OnPlayerDash -= OnPlayerDash;
+        GameInput.Instance.OnPlayerDash -= DashPressed;
+        GameInput.Instance.OnPlayerAttack -= AttackPressed;
+        GameInput.Instance.OnPlayerCancelAttack -= AttackReleased;
     }
 
-    private void OnPlayerDash() {
-        var data = LocalInputData;
-        data.isDashing = true;
-        LocalInputData = data;
+    private void DashPressed() {
+        _localInputData.dashPressed = true;
+    }
+
+    private void AttackPressed() {
+        _localInputData.attackPressed = true;
+    }
+
+    private void AttackReleased() {
+        _localInputData.attackPressed = false;
     }
 
     public override void Render() {
-        var data = LocalInputData;
-        data.movementDirection = GameInput.Instance.GetMovementInput();
-        // Don't clear isDashing here — let OnInput consume it
-        LocalInputData = data;
+        _localInputData.movementDirection = GameInput.Instance.GetMovementInput();
     }
 
-    public void ConsumeInput() {
-        var data = LocalInputData;
-        data.isDashing = false;
-        LocalInputData = data;
+    // ConsumeInput is called by NetworkManager to clear the input data
+    public PlayerControllerLocalInputData ConsumeInput() {
+        // First we store a snapshot of the local input data before clearing
+        PlayerControllerLocalInputData localInputDataCopy = _localInputData;
+
+        // Clear the local input data
+        _localInputData.dashPressed = false;
+
+        // Return the snapshot
+        return localInputDataCopy;
     }
 }
 
 public struct PlayerControllerLocalInputData {
     public Vector2 movementDirection;
-    public bool isDashing;
+    public bool dashPressed;
+    public bool attackPressed;
 }

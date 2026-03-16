@@ -35,6 +35,7 @@ public class PlayerMovement : NetworkBehaviour
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
         Init();
     }
+
     public override void Render()
     {
         foreach (var change in _changeDetector.DetectChanges(this))
@@ -51,7 +52,7 @@ public class PlayerMovement : NetworkBehaviour
         }
     }
 
-    public void Init() {
+    private void Init() {
         _moveSpeed = _originalMoveSpeed;
         _dashCurrentDuration = 0;
         _dashCurrentCooldown = 0;
@@ -63,7 +64,7 @@ public class PlayerMovement : NetworkBehaviour
         if (GetInput(out NetworkInputData data))
         {
             Vector2 movementDirection = data.movementDirection.normalized;
-            bool dashPressed = data.buttons.IsSet(NetworkInputData.DASH_BUTTON);
+            bool dashPressed = data.buttons.IsSet(NetworkInputData.DASH);
 
             MovePlayer(movementDirection);
             Dash(dashPressed, Runner.DeltaTime);

@@ -94,15 +94,15 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
         if (_localPlayerController == null) {
             return;
         }
+        PlayerControllerLocalInputData localInputData = _localPlayerController.ConsumeInput();
 
         NetworkInputData data = new NetworkInputData();
-        data.movementDirection = _localPlayerController.LocalInputData.movementDirection;
-        data.buttons.Set(NetworkInputData.DASH_BUTTON, _localPlayerController.LocalInputData.isDashing);
+
+        data.movementDirection = localInputData.movementDirection;
+        data.buttons.Set(NetworkInputData.DASH, localInputData.dashPressed);
+        data.buttons.Set(NetworkInputData.ATTACK, localInputData.attackPressed);
 
         input.Set(data);
-
-        // Now it's safe to clear the dash flag
-        _localPlayerController.ConsumeInput();
     }
 
     // Callbacks

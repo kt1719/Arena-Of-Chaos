@@ -1,16 +1,35 @@
+using Fusion;
 using UnityEngine;
 
-public class PlayerCombat : MonoBehaviour
+public class PlayerCombat : NetworkBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
+    private ChangeDetector _changeDetector;
+    public override void Spawned() {
+        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+        Init();
     }
 
-    // Update is called once per frame
-    void Update()
+    public override void Despawned(NetworkRunner runner, bool hasState) {
+
+    }
+
+    public override void Render() {
+
+    }
+
+    private void Init() {
+
+    }
+
+    public override void FixedUpdateNetwork()
     {
-        
+        if (GetInput(out NetworkInputData data))
+        {
+            bool attackPressed = data.buttons.IsSet(NetworkInputData.ATTACK);
+
+            if (attackPressed) {
+                Debug.Log("Attack pressed");
+            }
+        }
     }
 }

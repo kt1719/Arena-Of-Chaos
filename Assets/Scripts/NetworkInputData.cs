@@ -3,8 +3,11 @@ using UnityEngine;
 
 public struct NetworkInputData : INetworkInput
 {
-    public const byte DASH_BUTTON = 0;
+    // ===== Constants =====
+    public const byte DASH = 0;
+    public const byte ATTACK = 1;
 
+    // ===== Properties =====
     public Vector2 movementDirection;
     public NetworkButtons buttons; // Bitmask of buttons pressed - 32 max
 }
