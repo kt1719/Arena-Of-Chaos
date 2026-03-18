@@ -99,6 +99,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
         NetworkInputData data = new NetworkInputData();
 
         data.movementDirection = localInputData.movementDirection;
+        data.weaponAimDirection = localInputData.weaponAimDirection;
         data.buttons.Set(NetworkInputData.DASH, localInputData.dashPressed);
         data.buttons.Set(NetworkInputData.ATTACK, localInputData.attackPressed);
 

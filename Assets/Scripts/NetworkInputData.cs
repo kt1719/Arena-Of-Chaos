@@ -9,5 +9,6 @@ public struct NetworkInputData : INetworkInput
 
     // ===== Properties =====
     public Vector2 movementDirection;
+    public Vector2 weaponAimDirection;
     public NetworkButtons buttons; // Bitmask of buttons pressed - 32 max
 }

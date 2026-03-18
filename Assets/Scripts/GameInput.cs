@@ -78,7 +78,12 @@ public class GameInput : MonoBehaviour
         return playerInputActions.Player.Move.ReadValue<Vector2>().normalized;
     }
 
-    public Vector2 GetMouseInputWorldPos()
+    public Vector2 GetWeaponAimDirection(Transform playerTransform)
+    {
+        return (GetMouseInputWorldPos() - (Vector2)playerTransform.position).normalized;
+    }
+
+    private Vector2 GetMouseInputWorldPos()
     {
         Vector2 mouseScreenPos = Input.mousePosition;
         return Camera.main.ScreenToWorldPoint(mouseScreenPos);

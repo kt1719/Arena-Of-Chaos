@@ -36,12 +36,11 @@ public class PlayerController : NetworkBehaviour
         _localInputData.attackPressed = false;
     }
 
-    public override void Render() {
-        _localInputData.movementDirection = GameInput.Instance.GetMovementInput();
-    }
-
     // ConsumeInput is called by NetworkManager to clear the input data
     public PlayerControllerLocalInputData ConsumeInput() {
+        _localInputData.movementDirection = GameInput.Instance.GetMovementInput();
+        _localInputData.weaponAimDirection = GameInput.Instance.GetWeaponAimDirection(transform);
+        
         // First we store a snapshot of the local input data before clearing
         PlayerControllerLocalInputData localInputDataCopy = _localInputData;
 
@@ -55,6 +54,7 @@ public class PlayerController : NetworkBehaviour
 
 public struct PlayerControllerLocalInputData {
     public Vector2 movementDirection;
+    public Vector2 weaponAimDirection;
     public bool dashPressed;
     public bool attackPressed;
 }

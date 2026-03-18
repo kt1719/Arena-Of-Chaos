@@ -388,7 +388,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   _testWeapon: {fileID: 11400000, guid: 5e0b533e0dfc4428ca4b33f57a780fe3, type: 2}
-  _activeWeaponTransform: {fileID: 5175127442612191155}
+  _weaponParent: {fileID: 5175127442612191155}
 --- !u!114 &5557956582610753161
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -677,7 +677,7 @@ GameObject:
   - component: {fileID: 320821883046928762}
   - component: {fileID: 5175127442612191155}
   m_Layer: 0
-  m_Name: ActiveWeapon
+  m_Name: WeaponParent
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
