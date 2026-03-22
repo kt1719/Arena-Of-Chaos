@@ -42,7 +42,7 @@ GameObject:
   - component: {fileID: 2636995282176924499}
   - component: {fileID: 6146310706782722309}
   m_Layer: 0
-  m_Name: SwordCollider
+  m_Name: SwipeCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -163,6 +163,7 @@ GameObject:
   - component: {fileID: 1298239039337548982}
   - component: {fileID: 865742916079466609}
   - component: {fileID: 6263360559825500183}
+  - component: {fileID: 928084226202979241}
   m_Layer: 0
   m_Name: SwordWeaponVisual
   m_TagString: Untagged
@@ -254,7 +255,7 @@ Animator:
   m_GameObject: {fileID: 5946884677074371129}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 5deb46e6156104ffaba1e2ac3af35552, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -266,6 +267,20 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &928084226202979241
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5946884677074371129}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59cd5a8d29b744d1caa1805c46894491, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  swordWeapon: {fileID: 3124012635851738422}
+  _networkAnimator: {fileID: 2948143885865951494}
 --- !u!1 &7103335205454646846
 GameObject:
   m_ObjectHideFlags: 0
@@ -275,6 +290,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7357133033059313564}
+  - component: {fileID: 2948143885865951494}
   - component: {fileID: 3124012635851738422}
   - component: {fileID: 7953179774342398295}
   - component: {fileID: 451089610699020223}
@@ -304,6 +320,24 @@ Transform:
   - {fileID: 1298239039337548982}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2948143885865951494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7103335205454646846}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 506319458, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkMecanimAnimator
+  Animator: {fileID: 6263360559825500183}
+  ApplyTiming: 2
+  SyncSettings: 79
+  StateHashes: 0000000074b2e0eaf6fdac6fe8f07d03db4358344d2c65c857bd5f22
+  TriggerHashes: 000000000d286c40
+  TotalWords: 1
 --- !u!114 &3124012635851738422
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -319,7 +353,10 @@ MonoBehaviour:
   _weaponState: 0
   _weaponParent: {fileID: 0}
   _weaponInstantiationOffset: {x: 0, y: 0, z: 0}
+  _weaponCooldown: 0
   weaponInfo: {fileID: 11400000, guid: 5e0b533e0dfc4428ca4b33f57a780fe3, type: 2}
+  _swipeCollider: {fileID: 6146310706782722309}
+  _swordVisual: {fileID: 0}
 --- !u!114 &7953179774342398295
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -354,6 +391,7 @@ MonoBehaviour:
   Flags: 262145
   NestedObjects: []
   NetworkedBehaviours:
+  - {fileID: 2948143885865951494}
   - {fileID: 3124012635851738422}
   - {fileID: 7953179774342398295}
   ForceRemoteRenderTimeframe: 0

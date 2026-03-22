@@ -20,6 +20,8 @@ public class PlayerCombat : NetworkBehaviour
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState) {
+        if (!HasInputAuthority) return;
+
         Runner.Despawn(_currentWeapon.Object);
     }
 
@@ -41,8 +43,11 @@ public class PlayerCombat : NetworkBehaviour
     {
         if (GetInput(out NetworkInputData data))
         {
+            // Input
             bool attackPressed = data.buttons.IsSet(NetworkInputData.ATTACK);
             Vector2 weaponAimDirection = data.weaponAimDirection;
+
+            // Action
             UpdatePlayerFacingDirection(weaponAimDirection);
             Attack(attackPressed);
         }

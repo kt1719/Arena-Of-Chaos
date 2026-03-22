@@ -1,3 +1,4 @@
+using System;
 using Fusion;
 using UnityEngine;
 
@@ -7,6 +8,7 @@ public abstract class BaseWeapon : NetworkBehaviour {
     [Networked] public byte weaponState { get; protected set; }
     [Networked] public NetworkObject weaponParent { get; protected set; }
     [Networked] public Vector3 weaponInstantiationOffset { get; protected set; }
+    [Networked] public float weaponCooldown { get; protected set; }
 
     // ===== Serialized Fields =====
     [SerializeField] protected WeaponInfo weaponInfo;
@@ -14,7 +16,13 @@ public abstract class BaseWeapon : NetworkBehaviour {
     // ===== Private Fields =====
     private ChangeDetector _changeDetector;
 
-    public abstract void Attack();
+    protected abstract bool AttackAction();
+
+    public bool Attack() {
+        if (weaponCooldown > 0) return false;
+        ResetWeaponCooldown();
+        return AttackAction();
+    }
 
     public override void Spawned() {
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
@@ -36,6 +44,24 @@ public abstract class BaseWeapon : NetworkBehaviour {
         }
     }
 
+    public override void FixedUpdateNetwork()
+    {
+        UpdateWeaponCooldown();
+    }
+
+    private void UpdateWeaponCooldown()
+    {
+        if (weaponCooldown > 0)
+        {
+            weaponCooldown = Mathf.Max(0, weaponCooldown - Runner.DeltaTime);
+        }
+    }
+
+    private void ResetWeaponCooldown()
+    {
+        weaponCooldown = weaponInfo.weaponCooldown;
+    }
+
     // Called before Spawned()
     public void Init(Vector2 weaponInstantiationOffset, NetworkObject weaponParent) {
         this.weaponParent = weaponParent;
@@ -49,5 +75,5 @@ public abstract class BaseWeapon : NetworkBehaviour {
     }
 
     public byte GetWeaponState() => weaponState;
-    public float GetWeaponCooldown() => weaponInfo.weaponCooldown;
+    public float GetWeaponTotalCoolDown() => weaponInfo.weaponCooldown;
 }
