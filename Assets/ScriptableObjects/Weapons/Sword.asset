@@ -18,4 +18,6 @@ MonoBehaviour:
   attackSpeed: 1
   weaponDamage: 1
   weaponRange: 0
+  knockbackForce: 2
+  knockbackDuration: 1
   instantiationOffset: {x: 0, y: 0}

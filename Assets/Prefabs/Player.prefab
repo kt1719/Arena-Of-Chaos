@@ -127,8 +127,9 @@ GameObject:
   m_Component:
   - component: {fileID: 6036445608410771707}
   - component: {fileID: 3889956373534142514}
+  - component: {fileID: 1687612083197979785}
   m_Layer: 7
-  m_Name: HurtBox
+  m_Name: PlayerHurtBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -195,6 +196,20 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 0.64, y: 0.95}
   m_EdgeRadius: 0
+--- !u!114 &1687612083197979785
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2839017117733916694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 776a3f35ca0894b1b9ef4d458ea423c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  _playerMovement: {fileID: 217004648115528771}
+  _playerKnockback: {fileID: 1583257551966381885}
 --- !u!1 &2855595555570944877
 GameObject:
   m_ObjectHideFlags: 0
@@ -212,7 +227,8 @@ GameObject:
   - component: {fileID: 217004648115528771}
   - component: {fileID: 4923285046338211585}
   - component: {fileID: 5557956582610753161}
-  m_Layer: 0
+  - component: {fileID: 1583257551966381885}
+  m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -358,6 +374,7 @@ MonoBehaviour:
   - {fileID: 217004648115528771}
   - {fileID: 4923285046338211585}
   - {fileID: 5557956582610753161}
+  - {fileID: 1583257551966381885}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &217004648115528771
 MonoBehaviour:
@@ -401,6 +418,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5609689075b044dde8121f37fe708259, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+--- !u!114 &1583257551966381885
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2855595555570944877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4227de13d6acd4164a11105d5fc52662, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  _knockbackOffset: {x: 0, y: 0}
+  _networkRigidbody: {fileID: 8940772853052481637}
+  _playerTransform: {fileID: 4992200292348210513}
+  _playerVisual: {fileID: 3382695425509765507}
+  _snapTolerance: 0.2
+  _largeMoveTolerance: 1.5
+  _predictionTimeout: 1
 --- !u!1 &3580509502522206772
 GameObject:
   m_ObjectHideFlags: 0

@@ -29,8 +29,11 @@ public class SwordWeapon : BaseWeapon
     
     protected override bool AttackAction()
     {
-        OnSwordSwipe?.Invoke(currentSwordSwipe);
-        
+        if (Runner.IsForward) {
+            // Only invoke for forward ticks so we don't invoke multiple times on re-simulations.
+            OnSwordSwipe?.Invoke(currentSwordSwipe);
+        }
+
         UpdateWeaponState();
         Hit();
 
@@ -45,13 +48,20 @@ public class SwordWeapon : BaseWeapon
         contactFilter.useLayerMask = true;
         contactFilter.layerMask = LayerMask.GetMask("PlayerHurtBox");
         int count = Physics2D.OverlapCollider(_swipeCollider, contactFilter, colliders);
+        
+        // Hit direction is the direction of the sword
+        Vector2 hitDirection = transform.right;
+        float knockbackForce = weaponInfo.knockbackForce;
+        float knockbackDuration = weaponInfo.knockbackDuration;
 
         for (int i = 0; i < count; i++)
         {
             Collider2D collider = colliders[i];
             // Potentially apply a hit to the target.
             Debug.Log("SwordWeapon: Hit " + collider.transform.name);
-
+            PlayerHurtBox playerHurtBox = collider.GetComponent<PlayerHurtBox>();
+            PlayerKnockback playerKnockback = playerHurtBox.GetPlayerKnockback();
+            playerKnockback.ApplyKnockback(hitDirection, knockbackForce, knockbackDuration);
         }
     }
 

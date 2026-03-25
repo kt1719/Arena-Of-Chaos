@@ -334,10 +334,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkMecanimAnimator
   Animator: {fileID: 6263360559825500183}
   ApplyTiming: 2
-  SyncSettings: 79
+  SyncSettings: 127
   StateHashes: 0000000074b2e0eaf6fdac6fe8f07d03db4358344d2c65c857bd5f22
   TriggerHashes: 000000000d286c40
-  TotalWords: 1
+  TotalWords: 3
 --- !u!114 &3124012635851738422
 MonoBehaviour:
   m_ObjectHideFlags: 0

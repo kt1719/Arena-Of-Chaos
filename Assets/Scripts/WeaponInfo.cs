@@ -9,6 +9,8 @@ public class WeaponInfo : ScriptableObject
     public float attackSpeed;
     public int weaponDamage;
     public int weaponRange;
+    public float knockbackForce;
+    public float knockbackDuration;
 
     public Vector2 instantiationOffset = Vector2.zero;
 }
