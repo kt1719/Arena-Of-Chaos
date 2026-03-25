@@ -1,7 +1,5 @@
 using System;
 using Fusion;
-using Unity.VisualScripting;
-using UnityEditor.Toolbars;
 using UnityEngine;
 
 public class PlayerMovement : NetworkBehaviour
