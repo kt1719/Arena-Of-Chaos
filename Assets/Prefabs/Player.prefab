@@ -392,6 +392,8 @@ MonoBehaviour:
   _dashSpeedMultiplier: 4
   _dashTotalDuration: 0.3
   _dashTotalCooldown: 0.1
+  _debugOrbitAngularSpeedDegrees: 40
+  _debugOrbitCorrectionSpeed: 1
 --- !u!114 &4923285046338211585
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -418,6 +420,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5609689075b044dde8121f37fe708259, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+  _debugOrbitViewportRadius: 0.16
 --- !u!114 &1583257551966381885
 MonoBehaviour:
   m_ObjectHideFlags: 0

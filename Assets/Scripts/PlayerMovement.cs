@@ -9,6 +9,8 @@ public class PlayerMovement : NetworkBehaviour
     [Networked] private float _dashCurrentDuration { get; set; }
     [Networked] private float _dashCurrentCooldown { get; set; }
     [Networked] private bool _isDashing { get; set; }
+    [Networked] private bool _isDebugOrbitActive { get; set; }
+    [Networked] private float _debugOrbitAngleRad { get; set; }
 
     // ===== Serialized Fields =====
     // Will most likely need to be networked in the future when I need to change values on runtime.
@@ -16,9 +18,12 @@ public class PlayerMovement : NetworkBehaviour
     [SerializeField] private float _dashSpeedMultiplier = 4f;
     [SerializeField] private float _dashTotalDuration = .5f;
     [SerializeField] private float _dashTotalCooldown = .1f;
+    [SerializeField] private float _debugOrbitAngularSpeedDegrees = 40f;
+    [SerializeField] private float _debugOrbitCorrectionSpeed = 10f;
     // ===== Events =====
     public event Action OnDashStart;
     public event Action OnDashEnd;
+    public bool IsDebugOrbitActive => _isDebugOrbitActive;
     
     // ===== Private Variables =====
 
@@ -55,6 +60,8 @@ public class PlayerMovement : NetworkBehaviour
         _dashCurrentDuration = 0;
         _dashCurrentCooldown = 0;
         _isDashing = false;
+        _isDebugOrbitActive = false;
+        _debugOrbitAngleRad = 0f;
     }
 
     public override void FixedUpdateNetwork()
@@ -63,10 +70,53 @@ public class PlayerMovement : NetworkBehaviour
         {
             Vector2 movementDirection = data.movementDirection.normalized;
             bool dashPressed = data.buttons.IsSet(NetworkInputData.DASH);
+            bool debugOrbitEnabled = data.buttons.IsSet(NetworkInputData.DEBUG_ORBIT);
+
+            if (debugOrbitEnabled && data.debugOrbitRadius > 0.001f)
+            {
+                UpdateDebugOrbit(data.debugOrbitCenter, data.debugOrbitRadius, Runner.DeltaTime);
+                return;
+            }
+
+            if (_isDebugOrbitActive)
+            {
+                _isDebugOrbitActive = false;
+                _rb.linearVelocity = Vector2.zero;
+            }
 
             MovePlayer(movementDirection);
             Dash(dashPressed, Runner.DeltaTime);
         }
+    }
+
+    private void UpdateDebugOrbit(Vector2 orbitCenter, float orbitRadius, float deltaTime)
+    {
+        if (!_isDebugOrbitActive)
+        {
+            _isDebugOrbitActive = true;
+            if (_isDashing)
+            {
+                EndDash();
+            }
+
+            Vector2 startOffset = _rb.position - orbitCenter;
+            _debugOrbitAngleRad = startOffset.sqrMagnitude > 0.0001f
+                ? Mathf.Atan2(startOffset.y, startOffset.x)
+                : 0f;
+        }
+
+        float angularSpeedRad = _debugOrbitAngularSpeedDegrees * Mathf.Deg2Rad;
+        _debugOrbitAngleRad = Mathf.Repeat(_debugOrbitAngleRad + angularSpeedRad * deltaTime, Mathf.PI * 2f);
+
+        Vector2 desiredUnit = new Vector2(Mathf.Cos(_debugOrbitAngleRad), Mathf.Sin(_debugOrbitAngleRad));
+        Vector2 desiredOffset = desiredUnit * orbitRadius;
+        Vector2 currentOffset = _rb.position - orbitCenter;
+        Vector2 radialCorrection = desiredOffset - currentOffset;
+
+        Vector2 tangent = new Vector2(-desiredUnit.y, desiredUnit.x);
+        float tangentialSpeed = angularSpeedRad * orbitRadius;
+
+        _rb.linearVelocity = tangent * tangentialSpeed + radialCorrection * _debugOrbitCorrectionSpeed;
     }
 
     private void MovePlayer(Vector2 movementDirection)

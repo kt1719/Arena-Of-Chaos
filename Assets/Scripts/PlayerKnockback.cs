@@ -12,9 +12,9 @@ public class PlayerKnockback : NetworkBehaviour
     [SerializeField] private NetworkRigidbody2D _networkRigidbody;
     [SerializeField] private Transform _playerTransform;
     [SerializeField] private Transform _playerVisual;
-    [SerializeField] private float _snapTolerance = 0.2f;
-    [SerializeField] private float _largeMoveTolerance = 1.5f; // Might need to make this more general and based on knockback magnitude value.
-    [SerializeField] private float _predictionTimeout = 1f;
+    [SerializeField] private float _snapTolerance = 0.1f;
+    [SerializeField] private float _largeMoveTolerance = 0.1f; // Might need to make this more general and based on knockback magnitude value.
+    [SerializeField] private float _predictionTimeout = 0.5f;
 
     // ===== Private Fields =====
     private bool _visualDetached;
@@ -139,4 +139,5 @@ public class PlayerKnockback : NetworkBehaviour
         float knockbackDistance = knockbackForce * knockbackDuration;
         return hitDirection * knockbackDistance;
     }
+
 }

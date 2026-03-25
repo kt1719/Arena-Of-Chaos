@@ -100,8 +100,11 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 
         data.movementDirection = localInputData.movementDirection;
         data.weaponAimDirection = localInputData.weaponAimDirection;
+        data.debugOrbitCenter = localInputData.debugOrbitCenter;
+        data.debugOrbitRadius = localInputData.debugOrbitRadius;
         data.buttons.Set(NetworkInputData.DASH, localInputData.dashPressed);
         data.buttons.Set(NetworkInputData.ATTACK, localInputData.attackPressed);
+        data.buttons.Set(NetworkInputData.DEBUG_ORBIT, localInputData.debugOrbitEnabled);
 
         input.Set(data);
     }
