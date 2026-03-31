@@ -12,6 +12,8 @@ public enum SwordSwipe
 
 public class SwordWeapon : BaseWeapon
 {
+    // ===== Networked Fields =====
+    [Networked] public int swingStartTick { get; protected set; }
     // ===== Events =====
     public event Action<SwordSwipe> OnSwordSwipe;
 
@@ -21,6 +23,7 @@ public class SwordWeapon : BaseWeapon
 
     // ===== Private Fields =====
     public SwordSwipe currentSwordSwipe { get; private set; }
+    private readonly HashSet<NetworkId> _hitCache = new();
 
     public override void Spawned() {
         base.Spawned();
@@ -29,9 +32,11 @@ public class SwordWeapon : BaseWeapon
     
     protected override bool AttackAction()
     {
-        OnSwordSwipe?.Invoke(currentSwordSwipe);
+        if (Runner.IsForward) {
+            OnSwordSwipe?.Invoke(currentSwordSwipe);
+            UpdateWeaponState();
+        }
         
-        UpdateWeaponState();
         Hit();
 
         return true;
@@ -39,20 +44,43 @@ public class SwordWeapon : BaseWeapon
 
     private void Hit()
     {
+        List<Collider2D> colliders = DetectPlayerHits();
+        Vector2 hitDirection = GetHitDirection();
+
+        foreach (Collider2D collider in colliders)
+        {
+            NetworkObject targetNetObj = collider.GetComponentInParent<NetworkObject>();
+            PlayerCombat targetPlayerCombat = targetNetObj.GetComponent<PlayerCombat>();
+
+            if (targetNetObj == null || targetPlayerCombat == null) continue;
+
+            // Hit the target and apply via PlayerCombat
+            _hitCache.Add(targetNetObj.Id);
+            targetPlayerCombat.ApplyHit(Object.InputAuthority, weaponInfo.weaponDamage, hitDirection);
+        }
+
+        PurgeHitCache();
+    }
+
+    private void PurgeHitCache()
+    {
+        _hitCache.Clear();
+    }
+
+    private Vector2 GetHitDirection()
+    {
+        return GameInput.Instance.GetWeaponAimDirection(playerCombat.transform);
+    }
+
+    private List<Collider2D> DetectPlayerHits()
+    {
         List<Collider2D> colliders = new List<Collider2D>();
         ContactFilter2D contactFilter = new ContactFilter2D();
         contactFilter.useTriggers = true;
         contactFilter.useLayerMask = true;
         contactFilter.layerMask = LayerMask.GetMask("PlayerHurtBox");
-        int count = Physics2D.OverlapCollider(_swipeCollider, contactFilter, colliders);
-
-        for (int i = 0; i < count; i++)
-        {
-            Collider2D collider = colliders[i];
-            // Potentially apply a hit to the target.
-            Debug.Log("SwordWeapon: Hit " + collider.transform.name);
-
-        }
+        Physics2D.OverlapCollider(_swipeCollider, contactFilter, colliders);
+        return colliders;
     }
 
     private void UpdateWeaponState()

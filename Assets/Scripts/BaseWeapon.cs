@@ -7,6 +7,7 @@ public abstract class BaseWeapon : NetworkBehaviour {
     // ===== Networked Fields =====
     [Networked] public byte weaponState { get; protected set; }
     [Networked] public NetworkObject weaponParent { get; protected set; }
+    [Networked] public NetworkObject playerCombat { get; protected set; }
     [Networked] public Vector3 weaponInstantiationOffset { get; protected set; }
     [Networked] public float weaponCooldown { get; protected set; }
 
@@ -15,13 +16,15 @@ public abstract class BaseWeapon : NetworkBehaviour {
 
     // ===== Private Fields =====
     private ChangeDetector _changeDetector;
-
     protected abstract bool AttackAction();
 
     public bool Attack() {
         if (weaponCooldown > 0) return false;
+
         ResetWeaponCooldown();
-        return AttackAction();
+        
+        bool result = AttackAction();
+        return result;
     }
 
     public override void Spawned() {
@@ -63,8 +66,9 @@ public abstract class BaseWeapon : NetworkBehaviour {
     }
 
     // Called before Spawned()
-    public void Init(Vector2 weaponInstantiationOffset, NetworkObject weaponParent) {
+    public void Init(Vector2 weaponInstantiationOffset, NetworkObject weaponParent, NetworkObject playerCombat) {
         this.weaponParent = weaponParent;
+        this.playerCombat = playerCombat;
         this.weaponInstantiationOffset = new Vector3(weaponInstantiationOffset.x, weaponInstantiationOffset.y, 0);
     }
 

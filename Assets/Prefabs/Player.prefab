@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3382695425509765507}
   - component: {fileID: 914856107169855133}
   - component: {fileID: 4846183637823723359}
+  - component: {fileID: 4940600307512176112}
   m_Layer: 0
   m_Name: PlayerVisuals
   m_TagString: Untagged
@@ -117,6 +118,20 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &4940600307512176112
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2385849986813093456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb72f20bf3453482e880ad02ef5b5e1c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerVisual
+  _hitFlashMaterial: {fileID: 2100000, guid: d44cc3ee77e334dcf90d37e5ac332b55, type: 2}
+  hitFlashDuration: 0.1
 --- !u!1 &2839017117733916694
 GameObject:
   m_ObjectHideFlags: 0
@@ -389,6 +404,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   _testWeapon: {fileID: 11400000, guid: 5e0b533e0dfc4428ca4b33f57a780fe3, type: 2}
   _weaponParent: {fileID: 5175127442612191155}
+  _playerVisual: {fileID: 4940600307512176112}
 --- !u!114 &5557956582610753161
 MonoBehaviour:
   m_ObjectHideFlags: 0

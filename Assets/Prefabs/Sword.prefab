@@ -334,7 +334,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkMecanimAnimator
   Animator: {fileID: 6263360559825500183}
   ApplyTiming: 2
-  SyncSettings: 79
+  SyncSettings: 111
   StateHashes: 0000000074b2e0eaf6fdac6fe8f07d03db4358344d2c65c857bd5f22
   TriggerHashes: 000000000d286c40
   TotalWords: 1
@@ -352,9 +352,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   _weaponState: 0
   _weaponParent: {fileID: 0}
+  _playerCombat: {fileID: 0}
   _weaponInstantiationOffset: {x: 0, y: 0, z: 0}
   _weaponCooldown: 0
   weaponInfo: {fileID: 11400000, guid: 5e0b533e0dfc4428ca4b33f57a780fe3, type: 2}
+  _swingStartTick: 0
   _swipeCollider: {fileID: 6146310706782722309}
   _swordVisual: {fileID: 0}
 --- !u!114 &7953179774342398295

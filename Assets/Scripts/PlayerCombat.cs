@@ -14,6 +14,7 @@ public class PlayerCombat : NetworkBehaviour
     // ===== Serialized Fields =====
     [SerializeField] private WeaponInfo _testWeapon;
     [SerializeField] private NetworkObject _weaponParent;
+    [SerializeField] private PlayerVisual _playerVisual;
 
     public override void Spawned() {
         SpawnWeapon(_testWeapon);
@@ -34,7 +35,7 @@ public class PlayerCombat : NetworkBehaviour
             BaseWeapon weaponPrefab = weaponInfo.weaponPrefab;
             _currentWeapon = Runner.Spawn(weaponPrefab, Vector3.zero, Quaternion.identity, Object.InputAuthority, (runner, o) =>
             {
-                o.GetComponent<BaseWeapon>().Init(_testWeapon.instantiationOffset, _weaponParent);
+                o.GetComponent<BaseWeapon>().Init(_testWeapon.instantiationOffset, _weaponParent, Object);
             });
         }
     }
@@ -51,6 +52,21 @@ public class PlayerCombat : NetworkBehaviour
             UpdatePlayerFacingDirection(weaponAimDirection);
             Attack(attackPressed);
         }
+    }
+
+    public void ApplyHit(PlayerRef attackerId, int damage, Vector2 hitDirection) {
+        if (!HasStateAuthority) return;
+
+        RPC_TriggerHitFlash(attackerId);
+
+        // TO-DO: Damage the player - Queue to be consumed on FixedUpdateNetwork
+
+        // Apply knockback to the player - Queue to be consumed on FixedUpdateNetwork
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All, HostMode = RpcHostMode.SourceIsServer)]
+    private void RPC_TriggerHitFlash(PlayerRef attackerId) {
+        _playerVisual.TriggerHitFlash();
     }
 
     private void Attack(bool attackPressed) {
