@@ -17,7 +17,17 @@ public class PlayerCombat : NetworkBehaviour
     [SerializeField] private PlayerVisual _playerVisual;
     [SerializeField] private PlayerKnockback _playerKnockback;
 
+    // ===== Private Variables =====
+    private PlayerStats _stats;
+
     public override void Spawned() {
+        _stats = GetComponent<PlayerStats>();
+        if (_stats == null)
+        {
+            Debug.LogError($"[PlayerCombat] PlayerStats component not found on {gameObject.name}. Combat will not function correctly.", this);
+            return;
+        }
+
         SpawnWeapon(_testWeapon);
     }
 
