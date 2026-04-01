@@ -5,11 +5,11 @@ using UnityEngine;
 public abstract class BaseWeapon : NetworkBehaviour {
 
     // ===== Networked Fields =====
-    [Networked] public byte weaponState { get; protected set; }
-    [Networked] public NetworkObject weaponParent { get; protected set; }
-    [Networked] public NetworkObject playerCombat { get; protected set; }
-    [Networked] public Vector3 weaponInstantiationOffset { get; protected set; }
-    [Networked] public float weaponCooldown { get; protected set; }
+    [Networked] protected byte weaponState { get; private set; }
+    [Networked] protected NetworkObject weaponParent { get; private set; }
+    [Networked] protected NetworkObject playerCombat { get; private set; }
+    [Networked] protected Vector3 weaponInstantiationOffset { get; private set; }
+    [Networked] protected float weaponCooldown { get; private set; }
 
     // ===== Serialized Fields =====
     [SerializeField] protected WeaponInfo weaponInfo;

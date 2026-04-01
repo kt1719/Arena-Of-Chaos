@@ -13,6 +13,8 @@ public class SwordHitbox : MonoBehaviour
     [SerializeField] private Color gizmoColor = new Color(1f, 0f, 0f, 0.35f);
     [SerializeField] private Color gizmoWireColor = Color.red;
 
+    [HideInInspector] public Vector2 aimDirectionDebug;
+
     /// <summary>
     /// Returns true if a target position is within the semi-circle arc.
     /// </summary>
@@ -22,19 +24,11 @@ public class SwordHitbox : MonoBehaviour
         return angle <= attackAngle;
     }
 
-    private Vector2 GetAimDirection()
-    {
-        if (GameInput.Instance == null) return Vector2.up;
-
-        Transform playerTransform = transform.parent != null ? transform.parent : transform;
-        return GameInput.Instance.GetWeaponAimDirection(playerTransform);
-    }
-
     private void OnDrawGizmos()
     {
         if (!Application.isPlaying) return;
 
-        Vector2 aim = GetAimDirection();
+        Vector2 aim = aimDirectionDebug;
         if (aim.sqrMagnitude < 0.01f) return;
 
         Transform playerTransform = transform.parent != null ? transform.parent : transform;

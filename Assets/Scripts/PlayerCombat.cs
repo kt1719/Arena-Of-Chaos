@@ -15,6 +15,7 @@ public class PlayerCombat : NetworkBehaviour
     [SerializeField] private WeaponInfo _testWeapon;
     [SerializeField] private NetworkObject _weaponParent;
     [SerializeField] private PlayerVisual _playerVisual;
+    [SerializeField] private PlayerKnockback _playerKnockback;
 
     public override void Spawned() {
         SpawnWeapon(_testWeapon);
@@ -54,14 +55,14 @@ public class PlayerCombat : NetworkBehaviour
         }
     }
 
-    public void ApplyHit(PlayerRef attackerId, int damage, Vector2 hitDirection) {
+    public void ApplyHit(PlayerRef attackerId, int damage, Vector2 hitDirection, float knockbackForce, float knockbackDuration) {
         if (!HasStateAuthority) return;
 
         RPC_TriggerHitFlash(attackerId);
 
         // TO-DO: Damage the player - Queue to be consumed on FixedUpdateNetwork
 
-        // Apply knockback to the player - Queue to be consumed on FixedUpdateNetwork
+        _playerKnockback.ApplyKnockback(hitDirection, knockbackForce, knockbackDuration);
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All, HostMode = RpcHostMode.SourceIsServer)]
