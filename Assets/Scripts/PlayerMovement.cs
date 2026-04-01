@@ -1,7 +1,5 @@
 using System;
 using Fusion;
-using Unity.VisualScripting;
-using UnityEditor.Toolbars;
 using UnityEngine;
 
 public class PlayerMovement : NetworkBehaviour
@@ -13,6 +11,7 @@ public class PlayerMovement : NetworkBehaviour
     [Networked] private bool _isDashing { get; set; }
 
     // ===== Serialized Fields =====
+    [SerializeField] private PlayerKnockback _playerKnockback;
     // Will most likely need to be networked in the future when I need to change values on runtime.
     [SerializeField] private float _originalMoveSpeed = 5f;
     [SerializeField] private float _dashSpeedMultiplier = 4f;
@@ -61,6 +60,8 @@ public class PlayerMovement : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
+        if (_playerKnockback.IsKnockedBack) return;
+
         if (GetInput(out NetworkInputData data))
         {
             Vector2 movementDirection = data.movementDirection.normalized;

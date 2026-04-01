@@ -12,11 +12,12 @@ public enum SwordSwipe
 
 public class SwordWeapon : BaseWeapon
 {
+    // ===== Networked Fields =====
+    [Networked] private Vector2 _weaponAimDirection { get; set; } // Only networked for debugging purposes - this can be private
     // ===== Events =====
     public event Action<SwordSwipe> OnSwordSwipe;
 
     // ===== Serialized Fields =====
-    // [SerializeField] private PolygonCollider2D _swipeCollider;
     [SerializeField] private SwordHitbox _swordHitbox;
 
     // ===== Private Fields =====
@@ -26,6 +27,17 @@ public class SwordWeapon : BaseWeapon
     public override void Spawned() {
         base.Spawned();
         currentSwordSwipe = SwordSwipe.DOWN;
+    }
+
+    public override void FixedUpdateNetwork()
+    {
+        base.FixedUpdateNetwork();
+        if (GetInput(out NetworkInputData data))
+        {
+            Vector2 weaponAimDirection = data.weaponAimDirection;
+
+            _weaponAimDirection = weaponAimDirection;
+        }
     }
     
     protected override bool AttackAction()
@@ -42,8 +54,7 @@ public class SwordWeapon : BaseWeapon
 
     private void Hit()
     {
-        // List<Collider2D> colliders = DetectPlayerHits();
-        Vector2 hitDirection = GetHitDirection();
+        Vector2 hitDirection = _weaponAimDirection;
         List<LagCompensatedHit> hits = DetectPlayerHits(hitDirection);
 
         foreach (var hit in hits)
@@ -64,17 +75,12 @@ public class SwordWeapon : BaseWeapon
         if (targetNetObj == null || targetPlayerCombat == null || targetNetObj == Object || _hitCache.Contains(targetNetObj.Id)) return;
 
         _hitCache.Add(targetNetObj.Id);
-        targetPlayerCombat.ApplyHit(Object.InputAuthority, weaponInfo.weaponDamage, hitDirection);
+        targetPlayerCombat.ApplyHit(Object.InputAuthority, weaponInfo.weaponDamage, hitDirection, weaponInfo.knockbackForce, weaponInfo.knockbackDuration);
     }
 
     private void PurgeHitCache()
     {
         _hitCache.Clear();
-    }
-
-    private Vector2 GetHitDirection()
-    {
-        return GameInput.Instance.GetWeaponAimDirection(playerCombat.transform);
     }
 
     private List<LagCompensatedHit> DetectPlayerHits(Vector2 aimDirection)
@@ -95,7 +101,7 @@ public class SwordWeapon : BaseWeapon
 
         foreach (var hit in hits)
         {
-            if (HisIsInvalid(hit)) continue;
+            if (HitIsInvalid(hit)) continue;
 
             if (_swordHitbox.IsInsideArc(aimDirection, origin, hit.Hitbox.transform.position))
             {
@@ -106,9 +112,15 @@ public class SwordWeapon : BaseWeapon
         return filtered;
     }
 
-    private bool HisIsInvalid(LagCompensatedHit hit)
+    private bool HitIsInvalid(LagCompensatedHit hit)
     {
         return hit.Hitbox == null || hit.Hitbox.Root.Object.InputAuthority == Object.InputAuthority;
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (_swordHitbox == null) return;
+        _swordHitbox.aimDirectionDebug = _weaponAimDirection;
     }
 
     private void UpdateWeaponState()
