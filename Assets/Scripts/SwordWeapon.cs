@@ -12,14 +12,12 @@ public enum SwordSwipe
 
 public class SwordWeapon : BaseWeapon
 {
-    // ===== Networked Fields =====
-    [Networked] public int swingStartTick { get; protected set; }
     // ===== Events =====
     public event Action<SwordSwipe> OnSwordSwipe;
 
     // ===== Serialized Fields =====
-    [SerializeField] private PolygonCollider2D _swipeCollider;
-    [SerializeField] private SwordVisual _swordVisual;
+    // [SerializeField] private PolygonCollider2D _swipeCollider;
+    [SerializeField] private SwordHitbox _swordHitbox;
 
     // ===== Private Fields =====
     public SwordSwipe currentSwordSwipe { get; private set; }
@@ -44,22 +42,29 @@ public class SwordWeapon : BaseWeapon
 
     private void Hit()
     {
-        List<Collider2D> colliders = DetectPlayerHits();
+        // List<Collider2D> colliders = DetectPlayerHits();
         Vector2 hitDirection = GetHitDirection();
+        List<LagCompensatedHit> hits = DetectPlayerHits(hitDirection);
 
-        foreach (Collider2D collider in colliders)
+        foreach (var hit in hits)
         {
-            NetworkObject targetNetObj = collider.GetComponentInParent<NetworkObject>();
-            PlayerCombat targetPlayerCombat = targetNetObj.GetComponent<PlayerCombat>();
-
-            if (targetNetObj == null || targetPlayerCombat == null) continue;
-
-            // Hit the target and apply via PlayerCombat
-            _hitCache.Add(targetNetObj.Id);
-            targetPlayerCombat.ApplyHit(Object.InputAuthority, weaponInfo.weaponDamage, hitDirection);
+            Debug.Log($"Hit: {hit.Hitbox.Root.Object.name}");
+            ApplyHit(hitDirection, hit);
         }
 
         PurgeHitCache();
+    }
+
+    private void ApplyHit(Vector2 hitDirection, LagCompensatedHit hit)
+    {
+        if (hit.Hitbox == null) return;
+
+        NetworkObject targetNetObj = hit.Hitbox.Root.Object;
+        PlayerCombat targetPlayerCombat = targetNetObj.GetComponent<PlayerCombat>();
+        if (targetNetObj == null || targetPlayerCombat == null || targetNetObj == Object || _hitCache.Contains(targetNetObj.Id)) return;
+
+        _hitCache.Add(targetNetObj.Id);
+        targetPlayerCombat.ApplyHit(Object.InputAuthority, weaponInfo.weaponDamage, hitDirection);
     }
 
     private void PurgeHitCache()
@@ -72,15 +77,38 @@ public class SwordWeapon : BaseWeapon
         return GameInput.Instance.GetWeaponAimDirection(playerCombat.transform);
     }
 
-    private List<Collider2D> DetectPlayerHits()
+    private List<LagCompensatedHit> DetectPlayerHits(Vector2 aimDirection)
     {
-        List<Collider2D> colliders = new List<Collider2D>();
-        ContactFilter2D contactFilter = new ContactFilter2D();
-        contactFilter.useTriggers = true;
-        contactFilter.useLayerMask = true;
-        contactFilter.layerMask = LayerMask.GetMask("PlayerHurtBox");
-        Physics2D.OverlapCollider(_swipeCollider, contactFilter, colliders);
-        return colliders;
+        var hits = new List<LagCompensatedHit>();
+        var filtered = new List<LagCompensatedHit>();
+
+        Vector3 origin = playerCombat.transform.position;
+        Debug.Log($"Origin player combat: {origin}");
+
+        Runner.LagCompensation.OverlapSphere(
+            origin,
+            _swordHitbox.attackRange,
+            Object.InputAuthority,
+            hits,
+            options: HitOptions.SubtickAccuracy // To make it more precise
+        );
+
+        foreach (var hit in hits)
+        {
+            if (HisIsInvalid(hit)) continue;
+
+            if (_swordHitbox.IsInsideArc(aimDirection, origin, hit.Hitbox.transform.position))
+            {
+                filtered.Add(hit);
+            }
+        }
+
+        return filtered;
+    }
+
+    private bool HisIsInvalid(LagCompensatedHit hit)
+    {
+        return hit.Hitbox == null || hit.Hitbox.Root.Object.InputAuthority == Object.InputAuthority;
     }
 
     private void UpdateWeaponState()

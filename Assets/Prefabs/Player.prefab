@@ -142,6 +142,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6036445608410771707}
   - component: {fileID: 3889956373534142514}
+  - component: {fileID: 6361684972336756785}
   m_Layer: 7
   m_Name: HurtBox
   m_TagString: Untagged
@@ -171,7 +172,7 @@ BoxCollider2D:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2839017117733916694}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Density: 1
   m_Material: {fileID: 0}
@@ -210,6 +211,26 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 0.64, y: 0.95}
   m_EdgeRadius: 0
+--- !u!114 &6361684972336756785
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2839017117733916694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1014831617, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.Hitbox
+  Type: 1
+  SphereRadius: 0
+  CapsuleRadius: 0
+  BoxExtents: {x: 0.32, y: 0.475, z: 0}
+  CapsuleExtents: 0
+  Offset: {x: 0, y: 0.293904, z: 0}
+  Root: {fileID: 0}
+  GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!1 &2855595555570944877
 GameObject:
   m_ObjectHideFlags: 0
@@ -227,6 +248,7 @@ GameObject:
   - component: {fileID: 217004648115528771}
   - component: {fileID: 4923285046338211585}
   - component: {fileID: 5557956582610753161}
+  - component: {fileID: 3443028258029085884}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -373,6 +395,7 @@ MonoBehaviour:
   - {fileID: 217004648115528771}
   - {fileID: 4923285046338211585}
   - {fileID: 5557956582610753161}
+  - {fileID: 3443028258029085884}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &217004648115528771
 MonoBehaviour:
@@ -417,6 +440,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5609689075b044dde8121f37fe708259, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+--- !u!114 &3443028258029085884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2855595555570944877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1039544458, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.HitboxRoot
+  Config: 3
+  BroadRadius: 0
+  Offset: {x: 0, y: 0, z: 0}
+  GizmosColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  Hitboxes: []
 --- !u!1 &3580509502522206772
 GameObject:
   m_ObjectHideFlags: 0
