@@ -31,8 +31,6 @@ public class PlayerStats : NetworkBehaviour
 
     public override void Spawned()
     {
-        ValidateAndClampDefaults();
-
         MoveSpeed = _defaultMoveSpeed;
         DashSpeedMultiplier = _defaultDashSpeedMultiplier;
         DashTotalDuration = _defaultDashTotalDuration;
@@ -57,42 +55,5 @@ public class PlayerStats : NetworkBehaviour
         }
     }
 
-    private void ValidateAndClampDefaults()
-    {
-        if (_defaultMoveSpeed <= 0f)
-        {
-            Debug.LogWarning($"[PlayerStats] _defaultMoveSpeed is {_defaultMoveSpeed}, clamping to 0.1", this);
-            _defaultMoveSpeed = 0.1f;
-        }
 
-        if (_defaultDashSpeedMultiplier <= 0f)
-        {
-            Debug.LogWarning($"[PlayerStats] _defaultDashSpeedMultiplier is {_defaultDashSpeedMultiplier}, clamping to 0.1", this);
-            _defaultDashSpeedMultiplier = 0.1f;
-        }
-
-        if (_defaultDashTotalDuration <= 0f)
-        {
-            Debug.LogWarning($"[PlayerStats] _defaultDashTotalDuration is {_defaultDashTotalDuration}, clamping to 0.01", this);
-            _defaultDashTotalDuration = 0.01f;
-        }
-
-        if (_defaultDashTotalCooldown < 0f)
-        {
-            Debug.LogWarning($"[PlayerStats] _defaultDashTotalCooldown is {_defaultDashTotalCooldown}, clamping to 0", this);
-            _defaultDashTotalCooldown = 0f;
-        }
-
-        if (_defaultMaxHealth <= 0f)
-        {
-            Debug.LogWarning($"[PlayerStats] _defaultMaxHealth is {_defaultMaxHealth}, clamping to 1", this);
-            _defaultMaxHealth = 1f;
-        }
-
-        if (_defaultBaseDamage <= 0)
-        {
-            Debug.LogWarning($"[PlayerStats] _defaultBaseDamage is {_defaultBaseDamage}, clamping to 1", this);
-            _defaultBaseDamage = 1;
-        }
-    }
 }
