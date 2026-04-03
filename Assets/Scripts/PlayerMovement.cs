@@ -12,17 +12,12 @@ public class PlayerMovement : NetworkBehaviour
 
     // ===== Serialized Fields =====
     [SerializeField] private PlayerKnockback _playerKnockback;
-    // Will most likely need to be networked in the future when I need to change values on runtime.
-    [SerializeField] private float _originalMoveSpeed = 5f;
-    [SerializeField] private float _dashSpeedMultiplier = 4f;
-    [SerializeField] private float _dashTotalDuration = .5f;
-    [SerializeField] private float _dashTotalCooldown = .1f;
     // ===== Events =====
     public event Action OnDashStart;
     public event Action OnDashEnd;
     
     // ===== Private Variables =====
-
+    private PlayerStats _stats;
     private Rigidbody2D _rb;
     private ChangeDetector _changeDetector;
     private void Awake() {
@@ -31,6 +26,13 @@ public class PlayerMovement : NetworkBehaviour
 
     public override void Spawned()
     {
+        _stats = GetComponent<PlayerStats>();
+        if (_stats == null)
+        {
+            Debug.LogError($"[PlayerMovement] PlayerStats component not found on {gameObject.name}. Movement will not function correctly.", this);
+            return;
+        }
+
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
         Init();
     }
@@ -52,7 +54,7 @@ public class PlayerMovement : NetworkBehaviour
     }
 
     private void Init() {
-        _moveSpeed = _originalMoveSpeed;
+        _moveSpeed = _stats.MoveSpeed;
         _dashCurrentDuration = 0;
         _dashCurrentCooldown = 0;
         _isDashing = false;
@@ -87,14 +89,14 @@ public class PlayerMovement : NetworkBehaviour
             case true:
                 // If we are dashing then we simply add to the duration and check if we should end the dash
                 _dashCurrentDuration += deltaTime;
-                if (_dashCurrentDuration >= _dashTotalDuration) {
+                if (_dashCurrentDuration >= _stats.DashTotalDuration) {
                     EndDash();
                 }
                 break;
             case false:
                 if (dashPressed) {
                     if (_dashCurrentCooldown <= 0) {
-                    _moveSpeed = _originalMoveSpeed * _dashSpeedMultiplier;
+                    _moveSpeed = _stats.MoveSpeed * _stats.DashSpeedMultiplier;
                         _dashCurrentDuration = 0;
                         _isDashing = true;
                     }
@@ -104,8 +106,8 @@ public class PlayerMovement : NetworkBehaviour
     }
     
     private void EndDash() {
-        _moveSpeed = _originalMoveSpeed;
+        _moveSpeed = _stats.MoveSpeed;
         _isDashing = false;
-        _dashCurrentCooldown = _dashTotalCooldown;
+        _dashCurrentCooldown = _stats.DashTotalCooldown;
     }
 }

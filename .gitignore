@@ -82,3 +82,6 @@ Thumbs.db
 
 # Unity cache
 .unity/
+
+# Kiro specs
+.kiro/specs/
