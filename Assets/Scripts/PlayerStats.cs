@@ -44,6 +44,8 @@ public class PlayerStats : NetworkBehaviour
 
     public override void Render()
     {
+        if (_changeDetector == null) return;
+
         foreach (var change in _changeDetector.DetectChanges(this))
         {
             switch (change)

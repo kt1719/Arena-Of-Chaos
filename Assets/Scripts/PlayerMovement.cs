@@ -39,6 +39,8 @@ public class PlayerMovement : NetworkBehaviour
 
     public override void Render()
     {
+        if (_changeDetector == null) return;
+
         foreach (var change in _changeDetector.DetectChanges(this))
         {
             switch (change)
@@ -62,6 +64,7 @@ public class PlayerMovement : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
+        if (_stats == null) return;
         if (_playerKnockback.IsKnockedBack) return;
 
         if (GetInput(out NetworkInputData data))
