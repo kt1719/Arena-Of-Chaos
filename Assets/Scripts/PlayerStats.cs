@@ -5,15 +5,15 @@ using UnityEngine;
 public class PlayerStats : NetworkBehaviour
 {
     // ===== Movement Base Attributes =====
-    [Networked] public float MoveSpeed { get; set; }
-    [Networked] public float DashSpeedMultiplier { get; set; }
-    [Networked] public float DashTotalDuration { get; set; }
-    [Networked] public float DashTotalCooldown { get; set; }
+    [Networked, HideInInspector] public float MoveSpeed { get; set; }
+    [Networked, HideInInspector] public float DashSpeedMultiplier { get; set; }
+    [Networked, HideInInspector] public float DashTotalDuration { get; set; }
+    [Networked, HideInInspector] public float DashTotalCooldown { get; set; }
 
     // ===== Combat Base Attributes =====
-    [Networked] public float MaxHealth { get; set; }
-    [Networked] public float CurrentHealth { get; set; }
-    [Networked] public int BaseDamage { get; set; }
+    [Networked, HideInInspector] public float MaxHealth { get; set; }
+    [Networked, HideInInspector] public float CurrentHealth { get; set; }
+    [Networked, HideInInspector] public int BaseDamage { get; set; }
 
     // ===== Configurable Defaults (Inspector) =====
     [SerializeField] private float _defaultMoveSpeed = 5f;

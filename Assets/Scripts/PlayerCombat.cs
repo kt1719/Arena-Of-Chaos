@@ -53,6 +53,8 @@ public class PlayerCombat : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
+        if (_stats == null || _currentWeapon == null) return;
+
         if (GetInput(out NetworkInputData data))
         {
             // Input
