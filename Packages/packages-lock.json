@@ -21,6 +21,15 @@
       },
       "hash": "fd8ff1fb700caf062eb5cce364c1d0a85f99ebe6"
     },
+    "com.huynguyen03dev.ide.kiro": {
+      "version": "https://github.com/huynguyen03dev/com.unity.ide.kiro.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.test-framework": "1.1.9"
+      },
+      "hash": "6d7debf52c67f2a8e830500aa0e500ba2510d5bf"
+    },
     "com.unity.2d.animation": {
       "version": "13.0.2",
       "depth": 0,

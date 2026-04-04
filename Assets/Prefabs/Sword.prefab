@@ -1,36 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &4561166655822539634
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4579929237890011493}
-  m_Layer: 0
-  m_Name: SwordSlash
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4579929237890011493
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4561166655822539634}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 7357133033059313564}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5611337926603912645
 GameObject:
   m_ObjectHideFlags: 0
@@ -40,7 +9,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2636995282176924499}
-  - component: {fileID: 6146310706782722309}
   - component: {fileID: 3798258442573518969}
   m_Layer: 0
   m_Name: SwipeCollider
@@ -64,64 +32,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 7357133033059313564}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!60 &6146310706782722309
-PolygonCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5611337926603912645}
-  m_Enabled: 0
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 1
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0, y: 0}
-    oldSize: {x: 0, y: 0}
-    newSize: {x: 0, y: 0}
-    adaptiveTilingThreshold: 0
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  m_Points:
-    m_Paths:
-    - - {x: 1.379223, y: 1.221179}
-      - {x: 0.1568737, y: 1.588276}
-      - {x: 0.5551874, y: 0.4676392}
-      - {x: 0.5379304, y: -0.04038849}
-      - {x: 0.3505406, y: -0.3408653}
-      - {x: -0.2994295, y: -1.25111}
-      - {x: 0.4288639, y: -1.484939}
-      - {x: 1.007762, y: -1.333811}
-      - {x: 1.61066, y: -0.7201849}
-      - {x: 1.800713, y: 0.03464142}
-      - {x: 1.68239, y: 0.7456623}
-  m_UseDelaunayMesh: 1
 --- !u!114 &3798258442573518969
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -134,12 +44,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c57b36846d3247baba9516dfef1dfbc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  attackRange: 1.3
-  attackWidth: 2.3
+  attackRange: 2
+  attackAngle: 75
   attackDepth: 1
-  forwardOffset: 0.3
   gizmoColor: {r: 1, g: 0, b: 0, a: 0.35}
   gizmoWireColor: {r: 1, g: 0, b: 0, a: 1}
+  aimDirectionDebug: {x: 0.98648185, y: 0.16387062}
 --- !u!1 &5748472699389626810
 GameObject:
   m_ObjectHideFlags: 0
@@ -309,10 +219,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7357133033059313564}
+  - component: {fileID: 451089610699020223}
+  - component: {fileID: 7953179774342398295}
   - component: {fileID: 2948143885865951494}
   - component: {fileID: 3124012635851738422}
-  - component: {fileID: 7953179774342398295}
-  - component: {fileID: 451089610699020223}
+  - component: {fileID: 1219048785938594425}
   m_Layer: 0
   m_Name: Sword
   m_TagString: Untagged
@@ -334,11 +245,49 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5793198225274146785}
-  - {fileID: 4579929237890011493}
   - {fileID: 2636995282176924499}
   - {fileID: 1298239039337548982}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &451089610699020223
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7103335205454646846}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+  SortKey: 474369402
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 7953179774342398295}
+  - {fileID: 2948143885865951494}
+  - {fileID: 3124012635851738422}
+  - {fileID: 1219048785938594425}
+  ForceRemoteRenderTimeframe: 0
+--- !u!114 &7953179774342398295
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7103335205454646846}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkTransform
+  _stateAuthorityChangeErrorCorrectionDelta: 0
+  SyncScale: 0
+  SyncParent: 1
+  _autoAOIOverride: 1
+  DisableSharedModeInterpolation: 0
 --- !u!114 &2948143885865951494
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -369,14 +318,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dcc7694816c60424d95dcf029e4557da, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  _weaponState: 0
-  _weaponParent: {fileID: 0}
-  _playerCombat: {fileID: 0}
-  _weaponInstantiationOffset: {x: 0, y: 0, z: 0}
-  _weaponCooldown: 0
   weaponInfo: {fileID: 11400000, guid: 5e0b533e0dfc4428ca4b33f57a780fe3, type: 2}
-  _swordHitbox: {fileID: 3798258442573518969}
---- !u!114 &7953179774342398295
+  swordHitbox: {fileID: 3798258442573518969}
+--- !u!114 &1219048785938594425
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -385,32 +329,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 7103335205454646846}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Script: {fileID: 11500000, guid: 37f5afb7149f4443a9588f42d8d669ae, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkTransform
-  _stateAuthorityChangeErrorCorrectionDelta: 0
-  SyncScale: 0
-  SyncParent: 1
-  _autoAOIOverride: 1
-  DisableSharedModeInterpolation: 0
---- !u!114 &451089610699020223
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7103335205454646846}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
-  SortKey: 474369402
-  ObjectInterest: 1
-  Flags: 262145
-  NestedObjects: []
-  NetworkedBehaviours:
-  - {fileID: 2948143885865951494}
-  - {fileID: 3124012635851738422}
-  - {fileID: 7953179774342398295}
-  ForceRemoteRenderTimeframe: 0
+  m_EditorClassIdentifier: Assembly-CSharp::SwordSlash
+  swordWeapon: {fileID: 3124012635851738422}
+  slashAnimPrefab: {fileID: 2959206815318418799, guid: 59b33c82ab8ce49339c3dec41bb10ced, type: 3}
+  slashAnimSpawnPoint: {fileID: 5793198225274146785}

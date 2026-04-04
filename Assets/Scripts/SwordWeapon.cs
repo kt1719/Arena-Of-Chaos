@@ -18,7 +18,7 @@ public class SwordWeapon : BaseWeapon
     public event Action<SwordSwipe> OnSwordSwipe;
 
     // ===== Serialized Fields =====
-    [SerializeField] private SwordHitbox _swordHitbox;
+    [SerializeField] private SwordHitbox swordHitbox;
 
     // ===== Private Fields =====
     public SwordSwipe currentSwordSwipe { get; private set; }
@@ -43,6 +43,7 @@ public class SwordWeapon : BaseWeapon
     protected override bool AttackAction()
     {
         if (Runner.IsForward) {
+            Debug.Log($"Invoking OnSwordSwipe {Runner.Tick}");
             OnSwordSwipe?.Invoke(currentSwordSwipe);
             UpdateWeaponState();
         }
@@ -89,11 +90,10 @@ public class SwordWeapon : BaseWeapon
         var filtered = new List<LagCompensatedHit>();
 
         Vector3 origin = playerCombat.transform.position;
-        Debug.Log($"Origin player combat: {origin}");
 
         Runner.LagCompensation.OverlapSphere(
             origin,
-            _swordHitbox.attackRange,
+            swordHitbox.attackRange,
             Object.InputAuthority,
             hits,
             options: HitOptions.SubtickAccuracy // To make it more precise
@@ -103,7 +103,7 @@ public class SwordWeapon : BaseWeapon
         {
             if (HitIsInvalid(hit)) continue;
 
-            if (_swordHitbox.IsInsideArc(aimDirection, origin, hit.Hitbox.transform.position))
+            if (swordHitbox.IsInsideArc(aimDirection, origin, hit.Hitbox.transform.position))
             {
                 filtered.Add(hit);
             }
@@ -119,8 +119,8 @@ public class SwordWeapon : BaseWeapon
 
     private void OnDrawGizmos()
     {
-        if (_swordHitbox == null) return;
-        _swordHitbox.aimDirectionDebug = _weaponAimDirection;
+        if (swordHitbox == null) return;
+        swordHitbox.aimDirectionDebug = _weaponAimDirection;
     }
 
     private void UpdateWeaponState()
