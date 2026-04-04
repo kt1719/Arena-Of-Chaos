@@ -5,13 +5,13 @@ using UnityEngine;
 public class PlayerMovement : NetworkBehaviour
 {
     // ===== Networked Properties =====
-    [Networked] private float _moveSpeed { get; set; }
     [Networked] private float _dashCurrentDuration { get; set; }
     [Networked] private float _dashCurrentCooldown { get; set; }
     [Networked] private bool _isDashing { get; set; }
 
     // ===== Serialized Fields =====
     [SerializeField] private PlayerKnockback _playerKnockback;
+
     // ===== Events =====
     public event Action OnDashStart;
     public event Action OnDashEnd;
@@ -20,6 +20,11 @@ public class PlayerMovement : NetworkBehaviour
     private PlayerStats _stats;
     private Rigidbody2D _rb;
     private ChangeDetector _changeDetector;
+
+    private float EffectiveSpeed => _isDashing
+        ? _stats.MoveSpeed * _stats.DashSpeedMultiplier
+        : _stats.MoveSpeed;
+
     private void Awake() {
         _rb = GetComponent<Rigidbody2D>();
     }
@@ -34,11 +39,15 @@ public class PlayerMovement : NetworkBehaviour
         }
 
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
-        Init();
+        _dashCurrentDuration = 0;
+        _dashCurrentCooldown = 0;
+        _isDashing = false;
     }
 
     public override void Render()
     {
+        if (_changeDetector == null) return;
+
         foreach (var change in _changeDetector.DetectChanges(this))
         {
             switch (change)
@@ -53,15 +62,9 @@ public class PlayerMovement : NetworkBehaviour
         }
     }
 
-    private void Init() {
-        _moveSpeed = _stats.MoveSpeed;
-        _dashCurrentDuration = 0;
-        _dashCurrentCooldown = 0;
-        _isDashing = false;
-    }
-
     public override void FixedUpdateNetwork()
     {
+        if (_stats == null) return;
         if (_playerKnockback.IsKnockedBack) return;
 
         if (GetInput(out NetworkInputData data))
@@ -76,7 +79,7 @@ public class PlayerMovement : NetworkBehaviour
 
     private void MovePlayer(Vector2 movementDirection)
     {
-        _rb.linearVelocity = movementDirection * _moveSpeed;
+        _rb.linearVelocity = movementDirection * EffectiveSpeed;
     }
 
     private void Dash(bool dashPressed, float deltaTime)
@@ -87,26 +90,21 @@ public class PlayerMovement : NetworkBehaviour
 
         switch (_isDashing) {
             case true:
-                // If we are dashing then we simply add to the duration and check if we should end the dash
                 _dashCurrentDuration += deltaTime;
                 if (_dashCurrentDuration >= _stats.DashTotalDuration) {
                     EndDash();
                 }
                 break;
             case false:
-                if (dashPressed) {
-                    if (_dashCurrentCooldown <= 0) {
-                    _moveSpeed = _stats.MoveSpeed * _stats.DashSpeedMultiplier;
-                        _dashCurrentDuration = 0;
-                        _isDashing = true;
-                    }
+                if (dashPressed && _dashCurrentCooldown <= 0) {
+                    _dashCurrentDuration = 0;
+                    _isDashing = true;
                 }
                 break;
         }
     }
     
     private void EndDash() {
-        _moveSpeed = _stats.MoveSpeed;
         _isDashing = false;
         _dashCurrentCooldown = _stats.DashTotalCooldown;
     }
