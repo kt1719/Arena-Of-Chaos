@@ -67,6 +67,12 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 
     public void RegisterLocalPlayer(PlayerController playerController) {
         _localPlayerController = playerController;
+        CameraFollow.Instance?.SetTarget(playerController.transform);
+    }
+
+    public void UnregisterLocalPlayer() {
+        _localPlayerController = null;
+        CameraFollow.Instance?.ClearTarget();
     }
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
