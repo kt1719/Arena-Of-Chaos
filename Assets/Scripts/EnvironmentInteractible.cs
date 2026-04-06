@@ -20,7 +20,7 @@ public class EnvironmentInteractible : NetworkBehaviour {
             Destructible destructible = collider.GetComponent<Destructible>();
 
             if (!destructible) continue;
-            
+
             destructible.DestroyGameObject();
         }
     }
@@ -29,8 +29,7 @@ public class EnvironmentInteractible : NetworkBehaviour {
         // Get the things that the envCollider has collided with
         List<Collider2D> results = new List<Collider2D>();
 
-        int count = Physics2D.OverlapCollider(envCollider, ContactFilter2D.noFilter, results);
-        Debug.Log($"Destructibles - count: {count}");
+        Physics2D.OverlapCollider(envCollider, ContactFilter2D.noFilter, results);
         return results;
     }
 
