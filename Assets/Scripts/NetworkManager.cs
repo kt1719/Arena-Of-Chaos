@@ -73,10 +73,24 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     {
         if (runner.IsServer)
         {
-            // Create a unique position for the player
-            Vector3 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 3, 1, 0);
-            NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
-            // Keep track of the player avatars for easy access
+            Vector3 spawnPosition = Vector3.zero;
+            Quaternion spawnRotation = Quaternion.identity;
+
+            if (GameManager.Instance == null)
+            {
+                Debug.LogError("[NetworkManager] GameManager instance not found. Spawning at Vector3.zero.");
+            }
+            else if (GameManager.Instance.DefaultPlayerSpawnPoint == null)
+            {
+                Debug.LogWarning("[NetworkManager] GameManager spawn point is null. Spawning at Vector3.zero.");
+            }
+            else
+            {
+                spawnPosition = GameManager.Instance.DefaultPlayerSpawnPoint.position;
+                spawnRotation = GameManager.Instance.DefaultPlayerSpawnPoint.rotation;
+            }
+
+            NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, spawnRotation, player);
             _spawnedCharacters.Add(player, networkPlayerObject);
         }
     }
