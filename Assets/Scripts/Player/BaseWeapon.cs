@@ -22,7 +22,7 @@ public abstract class BaseWeapon : NetworkBehaviour {
         if (weaponCooldown > 0) return false;
 
         ResetWeaponCooldown();
-        
+
         bool result = AttackAction();
         return result;
     }

@@ -5,9 +5,6 @@ using UnityEngine;
 public class PlayerCombat : NetworkBehaviour
 {
 
-    // ===== Events =====
-    public event Action OnPlayerAttack;
-
     // ===== Networked Fields =====
     [Networked] private BaseWeapon CurrentWeapon { get; set; }
 

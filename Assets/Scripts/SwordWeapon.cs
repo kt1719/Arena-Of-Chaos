@@ -13,20 +13,22 @@ public enum SwordSwipe
 public class SwordWeapon : BaseWeapon
 {
     // ===== Networked Fields =====
-    [Networked] private Vector2 _weaponAimDirection { get; set; }
+    [Networked] private Vector2 WeaponAimDirection { get; set; }
+    
     // ===== Events =====
     public event Action<SwordSwipe> OnSwordSwipe;
 
     // ===== Serialized Fields =====
     [SerializeField] private SwordHitbox swordHitbox;
+    [SerializeField] private EnvironmentInteractible environmentInteractible;
 
     // ===== Private Fields =====
-    public SwordSwipe currentSwordSwipe { get; private set; }
+    public SwordSwipe CurrentSwordSwipe { get; private set; }
     private readonly HashSet<NetworkId> _hitCache = new();
 
     public override void Spawned() {
         base.Spawned();
-        currentSwordSwipe = SwordSwipe.DOWN;
+        CurrentSwordSwipe = SwordSwipe.DOWN;
     }
 
     public override void FixedUpdateNetwork()
@@ -36,36 +38,43 @@ public class SwordWeapon : BaseWeapon
         {
             Vector2 weaponAimDirection = data.weaponAimDirection;
 
-            _weaponAimDirection = weaponAimDirection;
+            WeaponAimDirection = weaponAimDirection;
         }
     }
     
     protected override bool AttackAction()
     {
         if (Runner.IsForward) {
-            OnSwordSwipe?.Invoke(currentSwordSwipe);
+            OnSwordSwipe?.Invoke(CurrentSwordSwipe);
             UpdateWeaponState();
         }
         
-        Hit();
+        HitEnv();
+        HitPlayers();
 
         return true;
     }
 
-    private void Hit()
-    {
-        Vector2 hitDirection = _weaponAimDirection;
-        List<LagCompensatedHit> hits = DetectPlayerHits(hitDirection);
+    private void HitEnv() {
+        environmentInteractible.HitEnvironments();
+    }
 
-        foreach (var hit in hits)
+    private void HitPlayers()
+    {
+        Vector2 hitDirection = WeaponAimDirection;
+
+        // Apply playerHits
+        List<LagCompensatedHit> playerHits = DetectPlayerHits(hitDirection);
+
+        foreach (var playerHit in playerHits)
         {
-            ApplyHit(hitDirection, hit);
+            ApplyPlayerHit(hitDirection, playerHit);
         }
 
         PurgeHitCache();
     }
 
-    private void ApplyHit(Vector2 hitDirection, LagCompensatedHit hit)
+    private void ApplyPlayerHit(Vector2 hitDirection, LagCompensatedHit hit)
     {
         if (hit.Hitbox == null) return;
 
@@ -118,13 +127,13 @@ public class SwordWeapon : BaseWeapon
     private void OnDrawGizmos()
     {
         if (swordHitbox == null || !Object || !Object.IsValid) return;
-        swordHitbox.aimDirectionDebug = _weaponAimDirection;
+        swordHitbox.aimDirectionDebug = WeaponAimDirection;
     }
 
     private void UpdateWeaponState()
     {
-        byte currentWeaponState = (byte)currentSwordSwipe;
-        currentSwordSwipe = (SwordSwipe)currentWeaponState == SwordSwipe.UP ? SwordSwipe.DOWN : SwordSwipe.UP;
-        SetWeaponState((byte)currentSwordSwipe);
+        byte currentWeaponState = (byte)CurrentSwordSwipe;
+        CurrentSwordSwipe = (SwordSwipe)currentWeaponState == SwordSwipe.UP ? SwordSwipe.DOWN : SwordSwipe.UP;
+        SetWeaponState((byte)CurrentSwordSwipe);
     }
 }

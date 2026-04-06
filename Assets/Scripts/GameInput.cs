@@ -9,7 +9,7 @@ public class GameInput : MonoBehaviour
     public event Action OnPlayerAttack;
     public event Action OnPlayerCancelAttack;
     public event Action OnPlayerDash;
-    public event Action<OnPlayerInventoryArgs> OnPlayerInventory;
+    // public event Action<OnPlayerInventoryArgs> OnPlayerInventory;
 
     public class OnPlayerInventoryArgs : EventArgs
     {
