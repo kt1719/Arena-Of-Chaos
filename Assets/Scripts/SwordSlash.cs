@@ -8,13 +8,6 @@ public class SwordSlash : NetworkBehaviour
     [SerializeField] private SwordWeapon swordWeapon;
     [SerializeField] private Transform slashAnimPrefab;
     [SerializeField] private Transform slashAnimSpawnPoint;
-
-    // ===== Private Fields =====
-    private ChangeDetector _changeDetector;
-
-    public override void Spawned() {
-        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
-    }
     
     private void Start()
     {

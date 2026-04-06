@@ -9,7 +9,7 @@ public class PlayerCombat : NetworkBehaviour
     public event Action OnPlayerAttack;
 
     // ===== Networked Fields =====
-    [Networked] private BaseWeapon _currentWeapon { get; set; }
+    [Networked] private BaseWeapon CurrentWeapon { get; set; }
 
     // ===== Serialized Fields =====
     [SerializeField] private WeaponInfo _testWeapon;
@@ -34,7 +34,7 @@ public class PlayerCombat : NetworkBehaviour
     public override void Despawned(NetworkRunner runner, bool hasState) {
         if (!HasInputAuthority) return;
 
-        Runner.Despawn(_currentWeapon.Object);
+        Runner.Despawn(CurrentWeapon.Object);
     }
 
     public override void Render() {
@@ -44,7 +44,7 @@ public class PlayerCombat : NetworkBehaviour
     private void SpawnWeapon(WeaponInfo weaponInfo) {
         if (HasStateAuthority) {
             BaseWeapon weaponPrefab = weaponInfo.weaponPrefab;
-            _currentWeapon = Runner.Spawn(weaponPrefab, Vector3.zero, Quaternion.identity, Object.InputAuthority, (runner, o) =>
+            CurrentWeapon = Runner.Spawn(weaponPrefab, Vector3.zero, Quaternion.identity, Object.InputAuthority, (runner, o) =>
             {
                 o.GetComponent<BaseWeapon>().Init(_testWeapon.instantiationOffset, _weaponParent, Object);
             });
@@ -53,7 +53,7 @@ public class PlayerCombat : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
-        if (_stats == null || _currentWeapon == null) return;
+        if (_stats == null || CurrentWeapon == null) return;
 
         if (GetInput(out NetworkInputData data))
         {
@@ -85,14 +85,14 @@ public class PlayerCombat : NetworkBehaviour
     private void Attack(bool attackPressed) {
         if (!attackPressed) return;
 
-        _currentWeapon.Attack();
+        CurrentWeapon.Attack();
     }
 
     private void UpdatePlayerFacingDirection(Vector2 weaponAimDirection)
     {
         float offset = CalculateMouseFollowWithOffset(weaponAimDirection);
         float yRotation = weaponAimDirection.x < 0 ? 180f : 0f;
-        _currentWeapon.transform.localRotation = Quaternion.Euler(0, yRotation, offset);
+        CurrentWeapon.transform.localRotation = Quaternion.Euler(0, yRotation, offset);
     }
 
     private float CalculateMouseFollowWithOffset(Vector2 weaponAimDirection)
