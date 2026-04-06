@@ -19,6 +19,10 @@ public class PlayerController : NetworkBehaviour
     
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
+        if (HasInputAuthority)
+        {
+            NetworkManager.Instance.UnregisterLocalPlayer();
+        }
         GameInput.Instance.OnPlayerDash -= DashPressed;
         GameInput.Instance.OnPlayerAttack -= AttackPressed;
         GameInput.Instance.OnPlayerCancelAttack -= AttackReleased;
