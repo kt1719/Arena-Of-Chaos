@@ -13,7 +13,7 @@ public enum SwordSwipe
 public class SwordWeapon : BaseWeapon
 {
     // ===== Networked Fields =====
-    [Networked] private Vector2 _weaponAimDirection { get; set; } // Only networked for debugging purposes - this can be private
+    [Networked] private Vector2 _weaponAimDirection { get; set; }
     // ===== Events =====
     public event Action<SwordSwipe> OnSwordSwipe;
 
@@ -43,7 +43,6 @@ public class SwordWeapon : BaseWeapon
     protected override bool AttackAction()
     {
         if (Runner.IsForward) {
-            Debug.Log($"Invoking OnSwordSwipe {Runner.Tick}");
             OnSwordSwipe?.Invoke(currentSwordSwipe);
             UpdateWeaponState();
         }
@@ -60,7 +59,6 @@ public class SwordWeapon : BaseWeapon
 
         foreach (var hit in hits)
         {
-            Debug.Log($"Hit: {hit.Hitbox.Root.Object.name}");
             ApplyHit(hitDirection, hit);
         }
 
@@ -119,7 +117,7 @@ public class SwordWeapon : BaseWeapon
 
     private void OnDrawGizmos()
     {
-        if (swordHitbox == null) return;
+        if (swordHitbox == null || !Object || !Object.IsValid) return;
         swordHitbox.aimDirectionDebug = _weaponAimDirection;
     }
 

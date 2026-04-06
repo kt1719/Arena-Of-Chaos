@@ -38,10 +38,7 @@ public class SwordSlash : NetworkBehaviour
 
     private void SpawnSlash(SwordSwipe currentSwordSwipe)
     {
-        Debug.Log("Instnatiating Slash Anim");
-
-        Transform slashAnim;
-        slashAnim = Instantiate(slashAnimPrefab, slashAnimSpawnPoint.transform.position, transform.parent.rotation);
+        Transform slashAnim = Instantiate(slashAnimPrefab, slashAnimSpawnPoint.transform.position, transform.parent.rotation);
         slashAnim.parent = transform;
 
         if (currentSwordSwipe == SwordSwipe.UP)
