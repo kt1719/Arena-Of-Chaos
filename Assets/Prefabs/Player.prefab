@@ -132,6 +132,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerVisual
   _hitFlashMaterial: {fileID: 2100000, guid: d44cc3ee77e334dcf90d37e5ac332b55, type: 2}
   hitFlashDuration: 0.1
+  _renderer: {fileID: 914856107169855133}
 --- !u!1 &2839017117733916694
 GameObject:
   m_ObjectHideFlags: 0

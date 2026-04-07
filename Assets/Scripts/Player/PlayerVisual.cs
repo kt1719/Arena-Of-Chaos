@@ -4,37 +4,24 @@ public class PlayerVisual : MonoBehaviour
 {
     [SerializeField] private Material _hitFlashMaterial;
     [SerializeField] private float hitFlashDuration = 0.1f;
-    
-    private Renderer[] _renderers;
-    private Material[] _originalMaterials;
+    [SerializeField] private SpriteRenderer _renderer;
+
+    private Material _originalMaterial;
 
     private void Awake()
     {
-        _renderers = GetComponentsInChildren<Renderer>();
-        _originalMaterials = new Material[_renderers.Length];
-        for (int i = 0; i < _renderers.Length; i++)
-        {
-            _originalMaterials[i] = _renderers[i].material;
-        }
+        _originalMaterial = _renderer.sharedMaterial;
     }
 
     public void TriggerHitFlash()
     {
         CancelInvoke();
-        for (int i = 0; i < _renderers.Length; i++)
-        {
-            if (_renderers[i] != null)
-                _renderers[i].material = _hitFlashMaterial;
-        }
-        Invoke(nameof(ResetMaterials), hitFlashDuration);
+        _renderer.material = _hitFlashMaterial;
+        Invoke(nameof(ResetMaterial), hitFlashDuration);
     }
 
-    private void ResetMaterials()
+    private void ResetMaterial()
     {
-        for (int i = 0; i < _renderers.Length; i++)
-        {
-            if (_renderers[i] != null)
-                _renderers[i].material = _originalMaterials[i];
-        }
+        _renderer.material = _originalMaterial;
     }
 }

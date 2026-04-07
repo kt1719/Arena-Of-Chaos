@@ -3,7 +3,6 @@ using Fusion;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Tilemaps;
-using UnityMCPServer.Handlers;
 
 public class TransparentDetection : MonoBehaviour
 {
