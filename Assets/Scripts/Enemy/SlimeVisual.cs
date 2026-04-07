@@ -2,15 +2,17 @@ using UnityEngine;
 
 public class SlimeVisual : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    [SerializeField] private EnemyPathfinding enemyPathfinding;
+    [SerializeField] private SpriteRenderer spriteRenderer;
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        
+        if (enemyPathfinding.FacingLeft)
+        {
+            spriteRenderer.flipX = true;
+        } else
+        {
+            spriteRenderer.flipX = false;
+        }
     }
 }

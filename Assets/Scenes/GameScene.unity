@@ -29802,6 +29802,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d452753ca5944fcf9d76668555710af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  enemyPathfinding: {fileID: 1976552518}
+  spriteRenderer: {fileID: 1504881515}
 --- !u!1001 &1524716237
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -32330,6 +32332,10 @@ GameObject:
   - component: {fileID: 1976552513}
   - component: {fileID: 1976552515}
   - component: {fileID: 1976552514}
+  - component: {fileID: 1976552516}
+  - component: {fileID: 1976552519}
+  - component: {fileID: 1976552518}
+  - component: {fileID: 1976552517}
   m_Layer: 0
   m_Name: Slime
   m_TagString: Untagged
@@ -32391,7 +32397,7 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDamping: 0
   m_AngularDamping: 0.05
-  m_GravityScale: 1
+  m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -32401,8 +32407,68 @@ Rigidbody2D:
     m_Bits: 0
   m_Interpolate: 0
   m_SleepingMode: 1
-  m_CollisionDetection: 0
-  m_Constraints: 0
+  m_CollisionDetection: 1
+  m_Constraints: 4
+--- !u!114 &1976552516
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1976552512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+  SortKey: 24481593
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 1976552514}
+  - {fileID: 1976552519}
+  - {fileID: 1976552518}
+  - {fileID: 1976552517}
+  ForceRemoteRenderTimeframe: 0
+--- !u!114 &1976552517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1976552512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c5012742820844399a75e5297233ab6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Knockback
+--- !u!114 &1976552518
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1976552512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79526c273fa4942a780dc591363c0e60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  movementSpeed: 1
+--- !u!114 &1976552519
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1976552512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30ae9f223db5c4d8b81851e0960ab80f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  roamChangeDirFloat: 2
 --- !u!1001 &2067344862
 PrefabInstance:
   m_ObjectHideFlags: 0
