@@ -6,6 +6,14 @@ public class Destructible : NetworkBehaviour
 {
     [SerializeField] private Transform destroyVFX;
 
+    private bool _isQuitting;
+
+    void OnApplicationQuit()
+    {
+        _isQuitting = true;
+    }
+
+
     public void DestroyGameObject() {
         if (!HasStateAuthority) return;
 
@@ -13,6 +21,8 @@ public class Destructible : NetworkBehaviour
     }
 
     private void OnDestroy() {
+        if (_isQuitting) return;
+        
         PlayVFX();
     }
 

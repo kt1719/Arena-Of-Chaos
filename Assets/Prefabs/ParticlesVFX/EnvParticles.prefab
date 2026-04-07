@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5252034505916562870}
   - component: {fileID: 5036527753443896442}
   - component: {fileID: 4799386744048316600}
-  - component: {fileID: 3280749764857639409}
+  - component: {fileID: 7382778828375492849}
   m_Layer: 0
   m_Name: EnvParticles
   m_TagString: Untagged
@@ -4768,7 +4768,7 @@ ParticleSystem:
     vectorLabel1_3: W
 --- !u!199 &4799386744048316600
 ParticleSystemRenderer:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -4814,6 +4814,7 @@ ParticleSystemRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 5
+  m_MaskInteraction: 0
   m_RenderMode: 0
   m_MeshDistribution: 0
   m_SortMode: 0
@@ -4845,8 +4846,7 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
-  m_MaskInteraction: 0
---- !u!114 &3280749764857639409
+--- !u!114 &7382778828375492849
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -4855,7 +4855,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 4503392691823381997}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 37571b0fb7dd8483883154e21298dab4, type: 3}
+  m_Script: {fileID: 11500000, guid: 37279977f13534ff1b4ad683e0df528b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Parallax
+  m_EditorClassIdentifier: '::'
   parallaxOffset: -0.5
