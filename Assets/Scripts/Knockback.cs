@@ -1,7 +1,7 @@
 using Fusion;
 using UnityEngine;
 
-public class PlayerKnockback : NetworkBehaviour
+public class Knockback : NetworkBehaviour
 {
     // ===== Networked Properties =====
     [Networked] private NetworkBool _isKnockedBack { get; set; }

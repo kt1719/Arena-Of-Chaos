@@ -12,7 +12,7 @@ public class PlayerCombat : NetworkBehaviour
     [SerializeField] private WeaponInfo _testWeapon;
     [SerializeField] private NetworkObject _weaponParent;
     [SerializeField] private PlayerVisual _playerVisual;
-    [SerializeField] private PlayerKnockback _playerKnockback;
+    [SerializeField] private Knockback _playerKnockback;
 
     // ===== Private Variables =====
     private PlayerStats _stats;

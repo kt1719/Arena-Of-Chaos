@@ -10,7 +10,7 @@ public class PlayerMovement : NetworkBehaviour
     [Networked] private bool _isDashing { get; set; }
 
     // ===== Serialized Fields =====
-    [SerializeField] private PlayerKnockback _playerKnockback;
+    [SerializeField] private Knockback _playerKnockback;
 
     // ===== Events =====
     public event Action OnDashStart;
