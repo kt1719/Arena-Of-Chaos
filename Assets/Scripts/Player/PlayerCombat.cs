@@ -1,8 +1,7 @@
-using System;
 using Fusion;
 using UnityEngine;
 
-public class PlayerCombat : NetworkBehaviour
+public class PlayerCombat : NetworkBehaviour, IHittable
 {
 
     // ===== Networked Fields =====
