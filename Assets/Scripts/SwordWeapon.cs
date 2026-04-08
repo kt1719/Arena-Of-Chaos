@@ -83,7 +83,7 @@ public class SwordWeapon : BaseWeapon
         if (targetNetObj == null || targetPlayerCombat == null || targetNetObj == Object || _hitCache.Contains(targetNetObj.Id)) return;
 
         _hitCache.Add(targetNetObj.Id);
-        targetPlayerCombat.ApplyHit(Object.InputAuthority, weaponInfo.weaponDamage, hitDirection, weaponInfo.knockbackForce, weaponInfo.knockbackDuration);
+        targetPlayerCombat.ApplyHit(weaponInfo.weaponDamage, hitDirection, weaponInfo.knockbackForce, weaponInfo.knockbackDuration);
     }
 
     private void PurgeHitCache()

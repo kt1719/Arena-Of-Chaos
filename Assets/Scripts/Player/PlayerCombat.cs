@@ -64,10 +64,10 @@ public class PlayerCombat : NetworkBehaviour
         }
     }
 
-    public void ApplyHit(PlayerRef attackerId, int damage, Vector2 hitDirection, float knockbackForce, float knockbackDuration) {
+    public void ApplyHit(int damage, Vector2 hitDirection, float knockbackForce, float knockbackDuration) {
         if (!HasStateAuthority) return;
 
-        RPC_TriggerHitFlash(attackerId);
+        RPC_TriggerHitFlash();
 
         // TO-DO: Damage the player - Queue to be consumed on FixedUpdateNetwork
 
@@ -75,7 +75,7 @@ public class PlayerCombat : NetworkBehaviour
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All, HostMode = RpcHostMode.SourceIsServer)]
-    private void RPC_TriggerHitFlash(PlayerRef attackerId) {
+    private void RPC_TriggerHitFlash() {
         _playerVisual.TriggerHitFlash();
     }
 
