@@ -50,7 +50,7 @@ public class SwordWeapon : BaseWeapon
         }
         
         HitEnv();
-        HitPlayers();
+        HitTargets();
 
         return true;
     }
@@ -59,31 +59,32 @@ public class SwordWeapon : BaseWeapon
         environmentInteractible.HitEnvironments();
     }
 
-    private void HitPlayers()
+    private void HitTargets()
     {
         Vector2 hitDirection = WeaponAimDirection;
 
-        // Apply playerHits
-        List<LagCompensatedHit> playerHits = DetectPlayerHits(hitDirection);
+        List<LagCompensatedHit> hits = DetectHits(hitDirection);
 
-        foreach (var playerHit in playerHits)
+        foreach (var hit in hits)
         {
-            ApplyPlayerHit(hitDirection, playerHit);
+            ApplyHit(hitDirection, hit);
         }
 
         PurgeHitCache();
     }
 
-    private void ApplyPlayerHit(Vector2 hitDirection, LagCompensatedHit hit)
+    private void ApplyHit(Vector2 hitDirection, LagCompensatedHit hit)
     {
         if (hit.Hitbox == null) return;
 
         NetworkObject targetNetObj = hit.Hitbox.Root.Object;
-        PlayerCombat targetPlayerCombat = targetNetObj.GetComponent<PlayerCombat>();
-        if (targetNetObj == null || targetPlayerCombat == null || targetNetObj == Object || _hitCache.Contains(targetNetObj.Id)) return;
+        if (targetNetObj == null || targetNetObj == playerCombat || _hitCache.Contains(targetNetObj.Id)) return;
+
+        IHittable hittable = targetNetObj.GetComponent<IHittable>();
+        if (hittable == null) return;
 
         _hitCache.Add(targetNetObj.Id);
-        targetPlayerCombat.ApplyHit(weaponInfo.weaponDamage, hitDirection, weaponInfo.knockbackForce, weaponInfo.knockbackDuration);
+        hittable.ApplyHit(weaponInfo.weaponDamage, hitDirection, weaponInfo.knockbackForce, weaponInfo.knockbackDuration);
     }
 
     private void PurgeHitCache()
@@ -91,7 +92,7 @@ public class SwordWeapon : BaseWeapon
         _hitCache.Clear();
     }
 
-    private List<LagCompensatedHit> DetectPlayerHits(Vector2 aimDirection)
+    private List<LagCompensatedHit> DetectHits(Vector2 aimDirection)
     {
         var hits = new List<LagCompensatedHit>();
         var filtered = new List<LagCompensatedHit>();
