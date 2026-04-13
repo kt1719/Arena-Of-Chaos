@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a01cfefbdd424c6287c0dff674bbac9, type: 3}
-  m_Name: Sword
+  m_Name: Bow
   m_EditorClassIdentifier: Assembly-CSharp::WeaponInfo
-  weaponPrefab: {fileID: 3124012635851738422, guid: a060921be0d8f462c93df42d22b8fc5e, type: 3}
+  weaponPrefab: {fileID: 7668323978137504020, guid: 798a6e0be8f6743099bbadb062c3e6d3, type: 3}
   weaponCooldown: 0.5
   weaponAttackDuration: 0.36
   attackSpeed: 1
-  weaponDamage: 5
-  weaponRange: 0
+  weaponDamage: 1
+  weaponRange: 12
   knockbackForce: 10
   knockbackDuration: 0.2
-  instantiationOffset: {x: 0, y: 0}
+  instantiationOffset: {x: 0, y: 0.3}

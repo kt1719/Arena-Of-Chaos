@@ -9,7 +9,7 @@ public class GameInput : MonoBehaviour
     public event Action OnPlayerAttack;
     public event Action OnPlayerCancelAttack;
     public event Action OnPlayerDash;
-    // public event Action<OnPlayerInventoryArgs> OnPlayerInventory;
+    public event Action<OnPlayerInventoryArgs> OnPlayerInventory;
 
     public class OnPlayerInventoryArgs : EventArgs
     {
@@ -43,15 +43,21 @@ public class GameInput : MonoBehaviour
         playerInputActions.Player.Attack.performed += Attack_Performed;
         playerInputActions.Player.Attack.canceled += Attack_Released;
         playerInputActions.Player.Dash.performed += Dash_Performed;
+
+        playerInputActions.Inventory.Slot1.performed += ctx => Inventory_Performed(ctx, 0);
+        playerInputActions.Inventory.Slot2.performed += ctx => Inventory_Performed(ctx, 1);
+        playerInputActions.Inventory.Slot3.performed += ctx => Inventory_Performed(ctx, 2);
+        playerInputActions.Inventory.Slot4.performed += ctx => Inventory_Performed(ctx, 3);
+        playerInputActions.Inventory.Slot5.performed += ctx => Inventory_Performed(ctx, 4);
     }
 
-    // private void Inventory_Performed(InputAction.CallbackContext context, int pressedNum)
-    // {
-    //     OnPlayerInventory?.Invoke(new OnPlayerInventoryArgs
-    //     {
-    //         pressedButton = pressedNum
-    //     });
-    // }
+    private void Inventory_Performed(InputAction.CallbackContext _, int pressedNum)
+    {
+        OnPlayerInventory?.Invoke(new OnPlayerInventoryArgs
+        {
+            pressedButton = pressedNum
+        });
+    }
 
     private void Dash_Performed(InputAction.CallbackContext context)
     {

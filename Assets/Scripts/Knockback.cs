@@ -1,8 +1,12 @@
+using System;
 using Fusion;
 using UnityEngine;
 
 public class Knockback : NetworkBehaviour
 {
+    // ===== Events ======
+    public event Action OnKnockbackEnd;
+
     // ===== Networked Properties =====
     [Networked] private NetworkBool _isKnockedBack { get; set; }
     [Networked] private float _knockbackTimer { get; set; }
@@ -43,5 +47,6 @@ public class Knockback : NetworkBehaviour
         _knockbackTimer = 0;
         _knockbackVelocity = Vector2.zero;
         _rb.linearVelocity = Vector2.zero;
+        OnKnockbackEnd?.Invoke();
     }
 }

@@ -1,8 +1,7 @@
-using System.Collections;
 using Fusion;
 using UnityEngine;
 
-public class Destructible : NetworkBehaviour
+public class EnemyDeathVFX : NetworkBehaviour
 {
     [SerializeField] private Transform destroyVFX;
 
