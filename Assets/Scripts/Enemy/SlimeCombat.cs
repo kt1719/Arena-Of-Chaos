@@ -5,8 +5,8 @@ using UnityEngine;
 public class SlimeCombat : NetworkBehaviour, IHittable
 {
     // ===== Networked Fields =====
-    [Networked] public float MaxHealth { get; set; }
-    [Networked] public float CurrentHealth { get; set; }
+    [HideInInspector][Networked] public float MaxHealth { get; set; }
+    [HideInInspector][Networked] public float CurrentHealth { get; set; }
 
     // ===== Serialized Fields =====
     [SerializeField] private float _defaultMaxHealth = 50f;
@@ -49,6 +49,7 @@ public class SlimeCombat : NetworkBehaviour, IHittable
     {
         if (!HasStateAuthority) return;
 
+        Debug.Log($"Damage: {damage}");
         CurrentHealth = Mathf.Max(0, CurrentHealth - damage);
 
         RPC_TriggerHitFlash();

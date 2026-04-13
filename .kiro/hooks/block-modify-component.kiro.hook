@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Block modify_component",
+  "description": "Prevents the use of mcp_unity_mcp_server_modify_component which crashes Unity. Use set_component_field instead for modifying component properties.",
+  "version": "1",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": [
+      ".*modify_component.*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "STOP. Do NOT call modify_component — it crashes Unity Editor. Use set_component_field instead for modifying component properties, or guide the user to set values manually in the Inspector. This tool call is DENIED."
+  }
+}

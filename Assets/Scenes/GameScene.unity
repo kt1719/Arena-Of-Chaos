@@ -29856,6 +29856,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   enemyPathfinding: {fileID: 1976552518}
   spriteRenderer: {fileID: 1504881515}
+  _hitFlashMaterial: {fileID: 2100000, guid: d44cc3ee77e334dcf90d37e5ac332b55, type: 2}
+  hitFlashDuration: 0.1
 --- !u!1001 &1524716237
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -32390,6 +32392,7 @@ GameObject:
   - component: {fileID: 1976552519}
   - component: {fileID: 1976552518}
   - component: {fileID: 1976552517}
+  - component: {fileID: 1976552522}
   m_Layer: 0
   m_Name: Slime
   m_TagString: Untagged
@@ -32486,6 +32489,7 @@ MonoBehaviour:
   - {fileID: 1976552519}
   - {fileID: 1976552518}
   - {fileID: 1976552517}
+  - {fileID: 1976552522}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &1976552517
 MonoBehaviour:
@@ -32579,6 +32583,23 @@ CapsuleCollider2D:
   m_Offset: {x: -0.00000001251066, y: -0.14}
   m_Size: {x: 0.82, y: 0.44}
   m_Direction: 1
+--- !u!114 &1976552522
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1976552512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8f8ca34ed8e641aa9a93800e5d52003, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlimeCombat
+  _MaxHealth: 0
+  _CurrentHealth: 0
+  _defaultMaxHealth: 50
+  _knockback: {fileID: 1976552517}
+  _slimeVisual: {fileID: 1504881518}
 --- !u!1001 &2067344862
 PrefabInstance:
   m_ObjectHideFlags: 0
