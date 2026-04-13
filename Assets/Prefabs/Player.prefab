@@ -384,7 +384,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 052c939adaf3e49aba124d3f147990f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  _testWeapon: {fileID: 11400000, guid: 5e0b533e0dfc4428ca4b33f57a780fe3, type: 2}
+  _testWeapon: {fileID: 11400000, guid: cd334ef14f2d14c2b911960c62f72e26, type: 2}
   _weaponParent: {fileID: 5175127442612191155}
   _playerVisual: {fileID: 4940600307512176112}
   _playerKnockback: {fileID: 5557956582610753161}
