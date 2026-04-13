@@ -25,6 +25,7 @@ public class SlimeCombat : NetworkBehaviour, IHittable
         {
             MaxHealth = _defaultMaxHealth;
             CurrentHealth = MaxHealth;
+            _knockback.OnKnockbackEnd += CheckDeath;
         }
 
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
@@ -55,7 +56,10 @@ public class SlimeCombat : NetworkBehaviour, IHittable
         RPC_TriggerHitFlash();
 
         _knockback.ApplyKnockback(hitDirection, knockbackForce, knockbackDuration);
+    }
 
+    private void CheckDeath() 
+    {
         if (CurrentHealth <= 0)
         {
             Die();
