@@ -33774,13 +33774,17 @@ PrefabInstance:
       propertyPath: _detectionRadius
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 7443589156293326935, guid: f1c7af24871b640ca8735f4f65e094d9, type: 3}
+      propertyPath: _loseInterestDuration
+      value: 0.3
+      objectReference: {fileID: 0}
     - target: {fileID: 7484471155485044848, guid: f1c7af24871b640ca8735f4f65e094d9, type: 3}
       propertyPath: _pathRecalcInterval
       value: 0.25
       objectReference: {fileID: 0}
     - target: {fileID: 7484471155485044848, guid: f1c7af24871b640ca8735f4f65e094d9, type: 3}
       propertyPath: _nextWaypointDistance
-      value: 0.5
+      value: 0.25
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
