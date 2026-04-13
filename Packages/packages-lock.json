@@ -12,6 +12,16 @@
       },
       "hash": "d18cb8a6622aee03463606e9b8494993f82a4cc5"
     },
+    "com.coplaydev.unity-mcp": {
+      "version": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.0.2",
+        "com.unity.test-framework": "1.1.31"
+      },
+      "hash": "73eb27aeccfa8e0676eaf3304136e9b85953d913"
+    },
     "com.huynguyen03dev.ide.kiro": {
       "version": "https://github.com/huynguyen03dev/com.unity.ide.kiro.git",
       "depth": 0,
