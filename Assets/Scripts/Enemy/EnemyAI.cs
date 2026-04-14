@@ -20,6 +20,9 @@ public class EnemyAI : NetworkBehaviour
     [SerializeField] private float _chaseSpeed = 2.5f;
     [SerializeField] private float _loseInterestDuration = 3f;
 
+    // ===== Constants =====
+    private const int MAX_ROAM_ATTEMPTS = 5;
+
     // ===== Private Variables =====
     private EnemyPathfinding _pathfinding;
     private SlimeLunge _lunge;
@@ -56,7 +59,6 @@ public class EnemyAI : NetworkBehaviour
 
     public override void FixedUpdateNetwork() {
         if (!HasStateAuthority) return;
-
         if (HandleKnockback()) return;
 
         switch (_state)
@@ -85,9 +87,7 @@ public class EnemyAI : NetworkBehaviour
         if (_roamTimer > 0f) return;
 
         _roamTimer = _roamChangeDirInterval;
-
-        Vector2 roamTarget = GetWalkableRoamTarget();
-        _pathfinding.SetTargetPosition(roamTarget);
+        _pathfinding.SetTargetPosition(GetWalkableRoamTarget());
     }
 
     private Vector2 GetWalkableRoamTarget() {
@@ -96,7 +96,7 @@ public class EnemyAI : NetworkBehaviour
         if (AstarPath.active == null)
             return origin + Random.insideUnitCircle.normalized * _roamRadius;
 
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < MAX_ROAM_ATTEMPTS; i++)
         {
             Vector2 candidate = origin + Random.insideUnitCircle.normalized * _roamRadius;
             var nearest = AstarPath.active.GetNearest(candidate, NNConstraint.Default);
@@ -105,7 +105,6 @@ public class EnemyAI : NetworkBehaviour
                 return (Vector3)nearest.node.position;
         }
 
-        // Fallback: stay put
         return origin;
     }
 
@@ -236,11 +235,9 @@ public class EnemyAI : NetworkBehaviour
 
     private bool HasLineOfSight(Transform target) {
         Vector2 origin = transform.position;
-        Vector2 targetPos = (Vector2)target.position;
-        Vector2 direction = targetPos - origin;
-        float distance = direction.magnitude;
+        Vector2 direction = (Vector2)target.position - origin;
 
-        RaycastHit2D[] hits = Physics2D.RaycastAll(origin, direction.normalized, distance, _obstacleLayer);
+        RaycastHit2D[] hits = Physics2D.RaycastAll(origin, direction.normalized, direction.magnitude, _obstacleLayer);
 
         foreach (RaycastHit2D hit in hits)
         {
