@@ -2,38 +2,36 @@ using UnityEngine;
 
 public class SlimeVisual : MonoBehaviour
 {
-    [SerializeField] private EnemyPathfinding enemyPathfinding;
-    [SerializeField] private SpriteRenderer spriteRenderer;
+    // ===== Serialized Fields =====
+    [SerializeField] private EnemyPathfinding _pathfinding;
+    [SerializeField] private SpriteRenderer _spriteRenderer;
     [SerializeField] private Material _hitFlashMaterial;
-    [SerializeField] private float hitFlashDuration = 0.1f;
+    [SerializeField] private float _hitFlashDuration = 0.1f;
 
+    // ===== Private Variables =====
     private Material _originalMaterial;
 
-    private void Awake()
-    {
-        _originalMaterial = spriteRenderer.sharedMaterial;
+    // ===== Lifecycle =====
+
+    private void Awake() {
+        _originalMaterial = _spriteRenderer.sharedMaterial;
     }
 
-    private void Update()
-    {
-        if (enemyPathfinding.FacingLeft)
-        {
-            spriteRenderer.flipX = true;
-        } else
-        {
-            spriteRenderer.flipX = false;
-        }
+    private void Update() {
+        _spriteRenderer.flipX = _pathfinding.FacingLeft;
     }
 
-    public void TriggerHitFlash()
-    {
+    // ===== Public API =====
+
+    public void TriggerHitFlash() {
         CancelInvoke();
-        spriteRenderer.material = _hitFlashMaterial;
-        Invoke(nameof(ResetMaterial), hitFlashDuration);
+        _spriteRenderer.material = _hitFlashMaterial;
+        Invoke(nameof(ResetMaterial), _hitFlashDuration);
     }
 
-    private void ResetMaterial()
-    {
-        spriteRenderer.material = _originalMaterial;
+    // ===== Helpers =====
+
+    private void ResetMaterial() {
+        _spriteRenderer.material = _originalMaterial;
     }
 }

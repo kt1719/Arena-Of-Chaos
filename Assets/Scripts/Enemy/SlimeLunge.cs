@@ -35,7 +35,7 @@ public class SlimeLunge : NetworkBehaviour
     // ===== Private Variables =====
     private Rigidbody2D _rb;
 
-    private LungePhase _phase = LungePhase.Idle;
+    private LungePhase _phase;
     private float _phaseTimer;
     private float _cooldownTimer;
     private Vector2 _dashDirection;
@@ -67,7 +67,7 @@ public class SlimeLunge : NetworkBehaviour
     public void StartLunge(Vector2 targetPosition) {
         if (!HasStateAuthority || !CanLunge) return;
 
-        _dashDirection = GetDirection(targetPosition);
+        _dashDirection = ((Vector2)targetPosition - (Vector2)transform.position).normalized;
         _hasHitThisLunge = false;
 
         EnterPhase(LungePhase.WindUp, _windUpDuration);
@@ -151,10 +151,6 @@ public class SlimeLunge : NetworkBehaviour
     private bool TickTimer() {
         _phaseTimer -= Runner.DeltaTime;
         return _phaseTimer <= 0f;
-    }
-
-    private Vector2 GetDirection(Vector2 target) {
-        return (target - (Vector2)transform.position).normalized;
     }
 
     private void SetVelocity(Vector2 velocity) {

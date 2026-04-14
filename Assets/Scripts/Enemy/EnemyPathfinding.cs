@@ -17,34 +17,33 @@ public class EnemyPathfinding : NetworkBehaviour
 
     // ===== Private Variables =====
     private Rigidbody2D _rb;
-    private Knockback _knockback;
     private Seeker _seeker;
 
+    private MovementState _state;
     private Vector2 _targetPosition;
-    private bool _hasTarget;
-    private bool _movementStopped;
-    private bool _paused;
     private bool _facingLeft;
 
     private Pathfinding.Path _currentPath;
     private int _currentWaypoint;
     private float _pathRecalcTimer;
 
+    private enum MovementState { Idle, Following, Paused }
+
     // ===== Lifecycle =====
 
     private void Awake() {
         _rb = GetComponent<Rigidbody2D>();
-        TryGetComponent(out _knockback);
         _seeker = GetComponent<Seeker>();
     }
 
     public override void FixedUpdateNetwork() {
         if (!HasStateAuthority) return;
-        if (IsKnockedBack()) return;
 
-        if (_movementStopped || _paused)
+        if (_state != MovementState.Following)
         {
-            if (_paused) SetVelocity(Vector2.zero);
+            if (_state == MovementState.Paused)
+                SetVelocity(Vector2.zero);
+
             return;
         }
 
@@ -55,7 +54,11 @@ public class EnemyPathfinding : NetworkBehaviour
 
     public void SetTargetPosition(Vector2 targetPosition) {
         _targetPosition = targetPosition;
-        _hasTarget = true;
+
+        if (_state == MovementState.Following)
+            return;
+
+        _state = MovementState.Following;
     }
 
     public void SetSpeed(float speed) {
@@ -63,19 +66,21 @@ public class EnemyPathfinding : NetworkBehaviour
     }
 
     public void StopMovement() {
-        _movementStopped = true;
-        _hasTarget = false;
+        _state = MovementState.Idle;
         _currentPath = null;
         _pathRecalcTimer = 0f;
         SetVelocity(Vector2.zero);
     }
 
     public void ResumeMovement() {
-        _movementStopped = false;
+        _state = MovementState.Following;
     }
 
     public void SetPaused(bool paused) {
-        _paused = paused;
+        if (paused && _state == MovementState.Following)
+            _state = MovementState.Paused;
+        else if (!paused && _state == MovementState.Paused)
+            _state = MovementState.Following;
     }
 
     // ===== A* Path Following =====
@@ -86,23 +91,13 @@ public class EnemyPathfinding : NetworkBehaviour
     }
 
     private void RecalculatePathIfNeeded() {
-        if (!_hasTarget) return;
-
         _pathRecalcTimer -= Runner.DeltaTime;
         if (_pathRecalcTimer > 0f) return;
-        if (_seeker != null && !_seeker.IsDone()) return;
+        if (!_seeker.IsDone()) return;
 
         _pathRecalcTimer = _pathRecalcInterval;
 
-        // Snap target to nearest walkable node to avoid "couldn't find node" errors
-        Vector2 endPos = _targetPosition;
-        if (AstarPath.active != null)
-        {
-            var nearest = AstarPath.active.GetNearest(endPos, NNConstraint.Default);
-            if (nearest.node != null)
-                endPos = (Vector3)nearest.node.position;
-        }
-
+        Vector2 endPos = SnapToWalkableNode(_targetPosition);
         _seeker.StartPath(transform.position, endPos, OnPathComplete);
     }
 
@@ -116,13 +111,7 @@ public class EnemyPathfinding : NetworkBehaviour
     private void FollowCurrentPath() {
         if (_currentPath == null) return;
 
-        // Skip past waypoints we're already close to
-        while (_currentWaypoint < _currentPath.vectorPath.Count)
-        {
-            Vector2 toWaypoint = (Vector2)_currentPath.vectorPath[_currentWaypoint] - (Vector2)transform.position;
-            if (toWaypoint.magnitude >= _nextWaypointDistance) break;
-            _currentWaypoint++;
-        }
+        AdvancePastReachedWaypoints();
 
         if (_currentWaypoint >= _currentPath.vectorPath.Count)
         {
@@ -135,10 +124,22 @@ public class EnemyPathfinding : NetworkBehaviour
         UpdateFacing(direction);
     }
 
+    private void AdvancePastReachedWaypoints() {
+        while (_currentWaypoint < _currentPath.vectorPath.Count)
+        {
+            float distance = Vector2.Distance(transform.position, _currentPath.vectorPath[_currentWaypoint]);
+            if (distance >= _nextWaypointDistance) break;
+            _currentWaypoint++;
+        }
+    }
+
     // ===== Helpers =====
 
-    private bool IsKnockedBack() {
-        return _knockback != null && _knockback.IsKnockedBack;
+    private Vector2 SnapToWalkableNode(Vector2 position) {
+        if (AstarPath.active == null) return position;
+
+        var nearest = AstarPath.active.GetNearest(position, NNConstraint.Default);
+        return nearest.node != null ? (Vector3)nearest.node.position : position;
     }
 
     private void SetVelocity(Vector2 velocity) {
