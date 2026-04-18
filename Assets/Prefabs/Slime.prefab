@@ -193,10 +193,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d452753ca5944fcf9d76668555710af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  enemyPathfinding: {fileID: 7484471155485044848}
-  spriteRenderer: {fileID: 2095609899490533719}
+  _pathfinding: {fileID: 7484471155485044848}
+  _spriteRenderer: {fileID: 2095609899490533719}
   _hitFlashMaterial: {fileID: 2100000, guid: d44cc3ee77e334dcf90d37e5ac332b55, type: 2}
-  hitFlashDuration: 0.1
+  _hitFlashDuration: 0.1
 --- !u!114 &6363339664320046745
 MonoBehaviour:
   m_ObjectHideFlags: 0
