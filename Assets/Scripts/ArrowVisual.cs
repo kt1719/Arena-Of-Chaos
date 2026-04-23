@@ -4,8 +4,6 @@ public class ArrowVisual : MonoBehaviour
 {
     // ===== Constants =====
     private const float PREDICTION_TIMEOUT = 0.5f;
-    private const float SMOOTH_SPEED = 30f;
-    private const float SNAP_THRESHOLD = 2f;
 
     // ===== Public State =====
     public int BufferIndex { get; private set; }
@@ -34,13 +32,7 @@ public class ArrowVisual : MonoBehaviour
     }
 
     public void UpdatePosition(Vector3 newPosition) {
-        float distance = Vector3.Distance(transform.position, newPosition);
-
-        if (distance > SNAP_THRESHOLD) {
-            transform.position = newPosition;
-        } else {
-            transform.position = Vector3.Lerp(transform.position, newPosition, SMOOTH_SPEED * Time.deltaTime);
-        }
+        transform.position = newPosition;
     }
 
     public void PredictHit(Vector2 hitPosition, Transform vfxPrefab) {
