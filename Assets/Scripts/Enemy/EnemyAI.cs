@@ -5,6 +5,11 @@ using UnityEngine;
 public class EnemyAI : NetworkBehaviour
 {
     // ===== Serialized Fields =====
+    [Header("Scripts")]
+    [SerializeField] private EnemyPathfinding _pathfinding;
+    [SerializeField] private SlimeLunge _lunge;
+    [SerializeField] private Knockback _knockback;
+
     [Header("Detection")]
     [SerializeField] private float _detectionRadius = 8f;
     [SerializeField] private float _lungeRange = 2.5f;
@@ -23,11 +28,6 @@ public class EnemyAI : NetworkBehaviour
     // ===== Constants =====
     private const int MAX_ROAM_ATTEMPTS = 5;
 
-    // ===== Private Variables =====
-    private EnemyPathfinding _pathfinding;
-    private SlimeLunge _lunge;
-    private Knockback _knockback;
-
     private State _state;
     private State _stateBeforeKnockback;
     private Transform _targetPlayer;
@@ -37,13 +37,7 @@ public class EnemyAI : NetworkBehaviour
     private enum State { Roaming, Chasing, Lunging, KnockedBack }
 
     // ===== Lifecycle =====
-
-    private void Awake() {
-        _pathfinding = GetComponent<EnemyPathfinding>();
-        _lunge = GetComponent<SlimeLunge>();
-        _knockback = GetComponent<Knockback>();
-    }
-
+    
     public override void Spawned() {
         if (!HasStateAuthority) return;
 
@@ -59,12 +53,12 @@ public class EnemyAI : NetworkBehaviour
 
     public override void FixedUpdateNetwork() {
         if (!HasStateAuthority) return;
-        if (HandleKnockback()) return;
 
         switch (_state)
         {
             case State.Roaming: TickRoaming(); break;
             case State.Chasing: TickChasing(); break;
+            case State.KnockedBack: TickKnockBack(); break;
         }
     }
 
@@ -147,17 +141,12 @@ public class EnemyAI : NetworkBehaviour
 
     // ===== State: KnockedBack =====
 
-    private bool HandleKnockback() {
-        if (_knockback == null || !_knockback.IsKnockedBack) return false;
+    private void TickKnockBack() {
+        if (_knockback == null || !_knockback.IsKnockedBack) return;
 
-        if (_state != State.KnockedBack)
-        {
-            _stateBeforeKnockback = _state;
-            _state = State.KnockedBack;
-            _pathfinding.StopMovement();
-        }
-
-        return true;
+        _stateBeforeKnockback = _state;
+        _state = State.KnockedBack;
+        _pathfinding.StopMovement();
     }
 
     // ===== State Transitions =====

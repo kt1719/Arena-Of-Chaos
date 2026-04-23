@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2636995282176924499}
   - component: {fileID: 3798258442573518969}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: SwipeCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -59,7 +59,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5793198225274146785}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: SlashAnimSpawnPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -93,7 +93,7 @@ GameObject:
   - component: {fileID: 865742916079466609}
   - component: {fileID: 6263360559825500183}
   - component: {fileID: 928084226202979241}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: SwordWeaponVisual
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -221,7 +221,7 @@ GameObject:
   - component: {fileID: 2594530483831146176}
   - component: {fileID: 128004293019473142}
   - component: {fileID: 324458167666386362}
-  m_Layer: 8
+  m_Layer: 6
   m_Name: SwipeEnvCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -328,7 +328,7 @@ GameObject:
   - component: {fileID: 2948143885865951494}
   - component: {fileID: 3124012635851738422}
   - component: {fileID: 1219048785938594425}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Sword
   m_TagString: Untagged
   m_Icon: {fileID: 0}

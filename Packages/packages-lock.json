@@ -12,6 +12,15 @@
       },
       "hash": "d18cb8a6622aee03463606e9b8494993f82a4cc5"
     },
+    "com.como.ide.kiro": {
+      "version": "https://github.com/XinLeng-Como/unity-kiro-integration.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.test-framework": "1.1.9"
+      },
+      "hash": "ceb8c041922f46c222abe6696ed347dab5f5f039"
+    },
     "com.coplaydev.unity-mcp": {
       "version": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main",
       "depth": 0,
@@ -21,15 +30,6 @@
         "com.unity.test-framework": "1.1.31"
       },
       "hash": "73eb27aeccfa8e0676eaf3304136e9b85953d913"
-    },
-    "com.huynguyen03dev.ide.kiro": {
-      "version": "https://github.com/huynguyen03dev/com.unity.ide.kiro.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {
-        "com.unity.test-framework": "1.1.9"
-      },
-      "hash": "6d7debf52c67f2a8e830500aa0e500ba2510d5bf"
     },
     "com.unity.2d.animation": {
       "version": "13.0.2",
