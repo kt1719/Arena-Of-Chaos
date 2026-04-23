@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1506417577049692105}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: ArrowSpawnPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -44,7 +44,7 @@ GameObject:
   - component: {fileID: 4378910913004841415}
   - component: {fileID: 1899728808340046707}
   - component: {fileID: 7668323978137504020}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Bow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -137,9 +137,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BowWeapon
   weaponInfo: {fileID: 11400000, guid: cd334ef14f2d14c2b911960c62f72e26, type: 2}
-  arrowPrefab:
-    RawGuidValue: 3c6788ccb102a40adbdf36f967e6bd2e
   arrowSpawnPoint: {fileID: 1506417577049692105}
+  arrowVisualPrefab: {fileID: 4729248851877551942, guid: 3c6788ccb102a40adbdf36f967e6bd2e, type: 3}
+  _arrowSpeed: 12
+  _arrowLifetime: 3
+  _hitRadius: 0.3
+  _environmentLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  _hitPredictionVFX: {fileID: 7050470672994868125, guid: 8d84878116c7048efae7fd96cebf7ac7, type: 3}
 --- !u!1 &7248127382366851148
 GameObject:
   m_ObjectHideFlags: 0
@@ -152,7 +158,7 @@ GameObject:
   - component: {fileID: 2287375040681242179}
   - component: {fileID: 5518559950998933382}
   - component: {fileID: 4138850584184216507}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: BowWeaponVisual
   m_TagString: Untagged
   m_Icon: {fileID: 0}
