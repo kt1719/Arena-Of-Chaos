@@ -34,6 +34,7 @@ public class BowWeapon : BaseWeapon
     // ===== Visual Tracking (Local Only) =====
     private int _visibleFireCount;
     private ArrowVisual[] _activeVisuals;
+    private int[] _visualFireTicks; // FireTick each visual was spawned for, used to detect rollback
 
     // ===== Cached =====
     private int _lifetimeInTicks;
@@ -44,6 +45,7 @@ public class BowWeapon : BaseWeapon
         base.Spawned();
 
         _activeVisuals = new ArrowVisual[BUFFER_CAPACITY];
+        _visualFireTicks = new int[BUFFER_CAPACITY];
         _visibleFireCount = _fireCount;
         _lifetimeInTicks = Mathf.CeilToInt(_arrowLifetime / Runner.DeltaTime);
     }
@@ -252,6 +254,12 @@ public class BowWeapon : BaseWeapon
 
     private void SpawnNewVisuals()
     {
+        // Handle rollback: if _fireCount went backwards, clamp _visibleFireCount
+        if (_visibleFireCount > _fireCount)
+        {
+            _visibleFireCount = _fireCount;
+        }
+
         while (_visibleFireCount < _fireCount)
         {
             int index = _visibleFireCount % BUFFER_CAPACITY;
@@ -262,6 +270,7 @@ public class BowWeapon : BaseWeapon
             {
                 Destroy(_activeVisuals[index].gameObject);
                 _activeVisuals[index] = null;
+                _visualFireTicks[index] = 0;
             }
 
             if (arrowVisualPrefab != null && data.IsActive)
@@ -273,6 +282,7 @@ public class BowWeapon : BaseWeapon
                 {
                     visual.Init(index, data.FireDirection, data.FirePosition);
                     _activeVisuals[index] = visual;
+                    _visualFireTicks[index] = data.FireTick;
                 }
             }
 
@@ -294,6 +304,17 @@ public class BowWeapon : BaseWeapon
 
             var data = _arrowBuffer[i];
 
+            // Reconciliation check: if the buffer slot was overwritten with a different
+            // arrow (different FireTick), the visual is stale — destroy it.
+            // This handles rollback where the server overwrote this slot.
+            if (data.FireTick != _visualFireTicks[i])
+            {
+                Destroy(visual.gameObject);
+                _activeVisuals[i] = null;
+                _visualFireTicks[i] = 0;
+                continue;
+            }
+
             // Arrow finished — play VFX and destroy
             if (data.IsFinished)
             {
@@ -305,11 +326,12 @@ public class BowWeapon : BaseWeapon
                 else
                 {
                     // Server confirmed hit — finish with VFX
-                    Vector2 hitPos = data.HitPosition != Vector2.zero ? data.HitPosition : visual.transform.position;
+                    Vector2 hitPos = data.HitPosition != Vector2.zero ? data.HitPosition : (Vector2)visual.transform.position;
                     visual.Finish((Vector3)hitPos, _hitPredictionVFX);
                 }
 
                 _activeVisuals[i] = null;
+                _visualFireTicks[i] = 0;
                 continue;
             }
 
@@ -318,6 +340,7 @@ public class BowWeapon : BaseWeapon
             {
                 visual.Expire();
                 _activeVisuals[i] = null;
+                _visualFireTicks[i] = 0;
                 continue;
             }
 
