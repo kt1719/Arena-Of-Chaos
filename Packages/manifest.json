@@ -1,8 +1,8 @@
 {
   "dependencies": {
     "com.akiojin.unity-mcp-server": "https://github.com/akiojin/unity-mcp-server.git?path=UnityMCPServer/Packages/unity-mcp-server",
+    "com.como.ide.kiro": "https://github.com/XinLeng-Como/unity-kiro-integration.git",
     "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main",
-    "com.huynguyen03dev.ide.kiro": "https://github.com/huynguyen03dev/com.unity.ide.kiro.git",
     "com.unity.2d.animation": "13.0.2",
     "com.unity.2d.aseprite": "3.0.1",
     "com.unity.2d.psdimporter": "12.0.1",
