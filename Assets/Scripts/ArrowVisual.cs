@@ -12,6 +12,9 @@ public class ArrowVisual : MonoBehaviour
 
     // ===== Public State =====
     public int BufferIndex { get; private set; }
+    public int FireTick { get; private set; }
+    public Vector2 SnapshotPosition { get; private set; }
+    public Vector2 SnapshotDirection { get; private set; }
     public bool IsPredictedHit { get; private set; }
     public bool PredictionTimerExpired => _predictionTimer <= 0f;
 
@@ -44,12 +47,16 @@ public class ArrowVisual : MonoBehaviour
         SetRenderersEnabled(true);
 
         if (_trailRenderer != null) {
+            _trailRenderer.emitting = false;
             _trailRenderer.Clear();
         }
     }
 
-    public void Init(int bufferIndex, Vector2 direction, Vector2 position) {
+    public void Init(int bufferIndex, int fireTick, Vector2 direction, Vector2 position) {
         BufferIndex = bufferIndex;
+        FireTick = fireTick;
+        SnapshotPosition = position;
+        SnapshotDirection = direction;
         ResetForReuse();
 
         transform.position = (Vector3)position;
@@ -72,9 +79,7 @@ public class ArrowVisual : MonoBehaviour
     }
 
     /// <summary>
-    /// Temporarily disables trail emission so the next position change
-    /// doesn't record a connecting segment (prevents snap artifacts).
-    /// Call before a discontinuous position update, then call ResumeTrail() after.
+    /// Disables trail emission. The TrailRenderer stops recording new positions.
     /// </summary>
     public void PauseTrail() {
         if (_trailRenderer != null) {
@@ -82,6 +87,9 @@ public class ArrowVisual : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Enables trail emission. The TrailRenderer begins recording positions.
+    /// </summary>
     public void ResumeTrail() {
         if (_trailRenderer != null) {
             _trailRenderer.emitting = true;
@@ -93,6 +101,7 @@ public class ArrowVisual : MonoBehaviour
         _predictionTimer = PREDICTION_TIMEOUT;
 
         SetRenderersEnabled(false);
+        PauseTrail();
         PlayVFX(hitPosition, vfxPrefab);
     }
 
@@ -105,6 +114,8 @@ public class ArrowVisual : MonoBehaviour
         _predictionTimer = PREDICTION_TIMEOUT;
 
         SetRenderersEnabled(true);
+        ClearTrail();
+        ResumeTrail();
     }
 
     /// <summary>

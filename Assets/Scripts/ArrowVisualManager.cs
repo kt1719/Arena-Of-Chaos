@@ -9,6 +9,14 @@ using UnityEngine;
 /// </summary>
 public class ArrowVisualManager
 {
+    // ===== Constants =====
+    /// <summary>
+    /// Seconds after fire before the trail starts emitting. Gives the networked
+    /// state time to settle (server confirmation, resimulation corrections) so
+    /// the TrailRenderer never records a discontinuous position jump.
+    /// </summary>
+    private const float TRAIL_START_DELAY = 0.1f;
+
     // ===== Config =====
     private int _bufferCapacity;
     private float _arrowSpeed;
@@ -20,7 +28,6 @@ public class ArrowVisualManager
 
     // ===== Visual Tracking =====
     private ArrowVisual[] _activeVisuals;
-    private int[] _visualFireTicks;
     private int _visibleFireCount;
 
     // ===== Object Pool =====
@@ -43,7 +50,6 @@ public class ArrowVisualManager
         _visibleFireCount = initialFireCount;
 
         _activeVisuals = new ArrowVisual[bufferCapacity];
-        _visualFireTicks = new int[bufferCapacity];
 
         InitPool(bufferCapacity);
     }
@@ -70,7 +76,9 @@ public class ArrowVisualManager
 
         if (_pool.Count > 0) {
             visual = _pool.Dequeue();
-            visual.gameObject.SetActive(true);
+            // Don't activate here — the caller controls visibility.
+            // Activating now would flash the visual at the stale pooled position
+            // for one frame before SpawnNewVisuals hides it again.
         } else {
             visual = CreateVisualInstance();
         }
@@ -89,6 +97,7 @@ public class ArrowVisualManager
 
     private ArrowVisual CreateVisualInstance() {
         GameObject go = Object.Instantiate(_prefab, _poolParent);
+        go.SetActive(false);
         ArrowVisual visual = go.GetComponent<ArrowVisual>();
         visual.OnReturnToPool = Return;
         return visual;
@@ -97,6 +106,10 @@ public class ArrowVisualManager
     // ===== Visual Spawning =====
 
     public void SpawnNewVisuals(NetworkArray<ArrowData> buffer, int fireCount) {
+        // During host-client resimulation, _fireCount can momentarily drop to the
+        // host's confirmed value before resim re-increments it. Just reset the
+        // counter — don't destroy visuals. UpdateVisuals already handles stale
+        // visuals via the FireTick mismatch check.
         if (_visibleFireCount > fireCount) {
             _visibleFireCount = fireCount;
         }
@@ -105,20 +118,29 @@ public class ArrowVisualManager
             int index = _visibleFireCount % _bufferCapacity;
             var data = buffer[index];
 
-            if (_activeVisuals[index] != null) {
-                Return(_activeVisuals[index]);
+            ArrowVisual existing = _activeVisuals[index];
+
+            // If a visual already exists for this exact arrow, keep it.
+            // This prevents resimulation-induced re-spawns from destroying
+            // and recreating a visual that's already in flight.
+            if (existing != null && existing.FireTick == data.FireTick) {
+                _visibleFireCount++;
+                continue;
+            }
+
+            // Different arrow in this slot — recycle the old visual
+            if (existing != null) {
+                Return(existing);
                 _activeVisuals[index] = null;
-                _visualFireTicks[index] = 0;
             }
 
             if (_prefab != null && data.IsActive) {
                 ArrowVisual visual = Get(data.FirePosition);
 
                 if (visual != null) {
-                    visual.Init(index, data.FireDirection, data.FirePosition);
+                    visual.Init(index, data.FireTick, data.FireDirection, data.FirePosition);
                     visual.gameObject.SetActive(false); // Hidden until render time catches up to fire tick
                     _activeVisuals[index] = visual;
-                    _visualFireTicks[index] = data.FireTick;
                 }
             }
 
@@ -141,33 +163,35 @@ public class ArrowVisualManager
             var data = buffer[i];
 
             // Stale visual from rollback — buffer slot was overwritten
-            if (data.FireTick != _visualFireTicks[i]) {
+            if (data.FireTick != visual.FireTick) {
                 Return(visual);
                 _activeVisuals[i] = null;
-                _visualFireTicks[i] = 0;
                 continue;
             }
 
             if (data.IsFinished) {
                 if (visual.IsPredictedHit) {
+                    // Already hidden by prediction — just return to pool once.
                     Return(visual);
                 } else {
                     Vector2 hitPos = data.HitPosition != Vector2.zero
                         ? data.HitPosition
                         : (Vector2)visual.transform.position;
+                    // Temporarily clear the callback to prevent Finish from also returning
+                    // to pool — we handle the return ourselves to avoid double-pooling.
+                    visual.OnReturnToPool = null;
                     visual.Finish((Vector3)hitPos, _hitPredictionVFX);
-                    // Finish plays VFX then returns to pool via OnReturnToPool callback
+                    visual.OnReturnToPool = Return;
+                    Return(visual);
                 }
 
                 _activeVisuals[i] = null;
-                _visualFireTicks[i] = 0;
                 continue;
             }
 
             if (!data.IsActive) {
                 visual.Expire();
                 _activeVisuals[i] = null;
-                _visualFireTicks[i] = 0;
                 continue;
             }
 
@@ -182,7 +206,10 @@ public class ArrowVisualManager
                 continue;
             }
 
-            Vector2 newPos = data.GetPosition(elapsed, _arrowSpeed);
+            // Position from snapshot — immune to resimulation mutations.
+            // The visual stores its own FirePosition/FireDirection from spawn time,
+            // so buffer corrections don't shift the trajectory mid-flight.
+            Vector2 newPos = visual.SnapshotPosition + visual.SnapshotDirection * _arrowSpeed * elapsed;
 
             if (!visual.gameObject.activeSelf) {
                 // Move transform to the correct position BEFORE activating so the
@@ -194,19 +221,15 @@ public class ArrowVisualManager
             }
 
             Vector2 prevPos = visual.transform.position;
+            visual.UpdatePosition((Vector3)newPos);
 
-            // Detect discontinuous jump: if the visual moved more than
-            // the arrow could physically travel in one render frame, it's a correction.
-            // Pause trail emission across the jump to prevent snap artifacts.
-            float maxExpectedMove = _arrowSpeed * Time.deltaTime * 2f;
-            float actualMove = Vector2.Distance(prevPos, newPos);
-
-            if (actualMove > maxExpectedMove && visual.gameObject.activeSelf) {
-                visual.PauseTrail();
-                visual.UpdatePosition((Vector3)newPos);
+            // Delay trail emission for a fixed period after fire. This gives the
+            // networked state time to settle — any resimulation corrections happen
+            // during this window and the TrailRenderer never sees them.
+            // The arrow sprite is visible and moving during the delay; only the
+            // trail is suppressed.
+            if (elapsed >= TRAIL_START_DELAY) {
                 visual.ResumeTrail();
-            } else {
-                visual.UpdatePosition((Vector3)newPos);
             }
 
             if (isInputAuthority && !visual.IsPredictedHit) {
