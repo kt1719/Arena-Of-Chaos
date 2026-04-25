@@ -10,7 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 7114290630945834697}
   - component: {fileID: 2545660058255763657}
-  m_Layer: 10
+  - component: {fileID: 6300026640853900477}
+  m_Layer: 11
   m_Name: HurtBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -51,7 +52,44 @@ MonoBehaviour:
   CapsuleExtents: 0.85
   Offset: {x: 0, y: 0, z: 0}
   Root: {fileID: 0}
-  GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  GizmosColor: {r: 1, g: 0.051886797, b: 0.78223234, a: 1}
+--- !u!70 &6300026640853900477
+CapsuleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2085213234713531506}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_Size: {x: 0.7, y: 0.85}
+  m_Direction: 0
 --- !u!1 &2282165073114354254
 GameObject:
   m_ObjectHideFlags: 0
@@ -410,6 +448,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30ae9f223db5c4d8b81851e0960ab80f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  _pathfinding: {fileID: 7484471155485044848}
+  _lunge: {fileID: 3265985255396214631}
+  _knockback: {fileID: 728714649227590024}
   _detectionRadius: 6
   _lungeRange: 2.5
   _playerLayer:

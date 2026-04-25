@@ -51,8 +51,8 @@
         "DelayThreshold": 0.0,
         "AdditionalJitter": 0.05,
         "LossChanceShape": 0,
-        "LossChanceMin": 0.05,
-        "LossChanceMax": 0.05,
+        "LossChanceMin": 0.20000000298023225,
+        "LossChanceMax": 0.30000001192092898,
         "LossChanceThreshold": 0.0,
         "LossChancePeriod": 0.0,
         "AdditionalLoss": 0.0

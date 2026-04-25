@@ -86,3 +86,7 @@ Thumbs.db
 # Kiro specs
 .kiro/specs/
 aidlc-docs/
+
+# BMAD output and personal config
+_bmad-output/
+_bmad/custom/*.user.toml
