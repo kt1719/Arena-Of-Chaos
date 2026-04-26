@@ -26,7 +26,7 @@ public class ActiveInventory : MonoBehaviour
         GameInput.Instance.OnPlayerInventory += GameInput_OnPlayerInventory;
 
         // Reset
-        OnChangeActiveWeapon.Invoke(currentActiveSlot.GetWeaponInfo());
+        OnChangeActiveWeapon?.Invoke(currentActiveSlot.GetWeaponInfo());
     }
 
     private void GameInput_OnPlayerInventory(GameInput.OnPlayerInventoryArgs e)
