@@ -5,7 +5,7 @@ using UnityEngine;
 /// <summary>
 /// Manages the visual (render-side) lifecycle of arrows:
 /// pooling, spawning, position interpolation, trail timing,
-/// and client-side hit prediction.
+/// and client-side hit prediction (shooter only).
 /// Plain C# — not a MonoBehaviour.
 /// </summary>
 public class ArrowVisualManager
@@ -33,6 +33,9 @@ public class ArrowVisualManager
     private readonly Queue<ArrowVisual> _pool = new();
     private GameObject _prefab;
     private Transform _poolRoot;
+
+    // ── Pre-allocated overlap buffer for prediction ──
+    private readonly Collider2D[] _predictionOverlaps = new Collider2D[16];
 
     // ════════════════════════════════════════
     //  Initialisation
@@ -152,17 +155,19 @@ public class ArrowVisualManager
 
     /// <summary>
     /// Drives every active visual: recycles stale ones, finalises hits/expires,
-    /// interpolates position, and runs client-side hit prediction.
+    /// interpolates position, and runs client-side hit prediction (shooter only).
     /// </summary>
     public void UpdateVisuals(NetworkArray<ArrowData> buffer)
     {
         bool isOwner = _networkObject != null && _networkObject.HasInputAuthority;
-        NetworkObject localPlayer = NetworkManager.Instance != null
-            ? NetworkManager.Instance.LocalPlayerObject
-            : null;
 
-        // LocalRenderTime for all clients — arrows are deterministic, no interpolation needed.
-        float renderTime = _runner.LocalRenderTime;
+        // Per Fusion docs: proxies render on the remote (interpolated) timeline,
+        // matching the timeline the snapshot data lives on. Local/state authority
+        // render on the local timeline. Mixing these causes the arrow to pop forward
+        // along its trajectory on proxy clients.
+        float renderTime = _networkObject.IsProxy
+            ? _runner.RemoteRenderTime
+            : _runner.LocalRenderTime;
 
         for (int i = 0; i < _bufferCapacity; i++)
         {
@@ -179,7 +184,11 @@ public class ArrowVisualManager
             if (!TryUpdatePosition(visual, elapsed, out Vector2 prevPos, out Vector2 newPos))
                 continue;
 
-            RunPrediction(visual, prevPos, newPos, isOwner, localPlayer);
+            // Only the shooter runs prediction. Proxies rely on the server-confirmed
+            // hit path (TryFinalise) — predicting on a proxy compares mismatched
+            // timelines and produced wrong results often enough to be net-negative.
+            if (isOwner)
+                RunShooterPrediction(visual, prevPos, newPos);
         }
     }
 
@@ -207,7 +216,6 @@ public class ArrowVisualManager
             visual.PlayHitVFX(hitPos, _hitVfxPrefab);
         }
 
-        // Single recycle path — RecycleSlot handles pool return.
         RecycleSlot(index);
         return true;
     }
@@ -216,7 +224,6 @@ public class ArrowVisualManager
     private bool TryExpire(int index, ArrowVisual visual, ArrowData data)
     {
         if (data.IsActive) return false;
-        // Single recycle path — RecycleSlot handles pool return.
         RecycleSlot(index);
         return true;
     }
@@ -260,20 +267,17 @@ public class ArrowVisualManager
     }
 
     // ════════════════════════════════════════
-    //  Client-Side Hit Prediction
+    //  Shooter-Side Hit Prediction
     // ════════════════════════════════════════
 
-    private void RunPrediction(
-        ArrowVisual visual, Vector2 prevPos, Vector2 newPos,
-        bool isOwner, NetworkObject localPlayer)
+    /// <summary>
+    /// Wraps the shooter's predicted-hit overlap check plus the misprediction
+    /// recovery timer.
+    /// </summary>
+    private void RunShooterPrediction(ArrowVisual visual, Vector2 prevPos, Vector2 newPos)
     {
         if (!visual.IsPredictedHit)
-        {
-            if (isOwner)
-                PredictLocalHit(visual, prevPos, newPos);
-            else if (localPlayer != null && _runner.LocalPlayer != _networkObject.InputAuthority)
-                PredictProxyHit(visual, newPos, localPlayer);
-        }
+            PredictLocalHit(visual, prevPos, newPos);
 
         if (visual.IsPredictedHit)
         {
@@ -284,17 +288,48 @@ public class ArrowVisualManager
     }
 
     /// <summary>
-    /// Shooter-side prediction: checks if the arrow overlaps any valid target
-    /// (enemy entity or solid environment) and shows a predicted hit VFX.
+    /// Multi-sample swept overlap check matching the server's lag-compensated
+    /// authority sampling. Same sample count as ArrowHitDetection.DetectEntityHit
+    /// so prediction agrees with authority.
     /// </summary>
     private void PredictLocalHit(ArrowVisual visual, Vector2 prevPos, Vector2 currPos)
     {
-        if (!HasMoved(prevPos, currPos)) return;
+        Vector2 delta = currPos - prevPos;
+        float distance = delta.magnitude;
 
-        Collider2D[] overlaps = Physics2D.OverlapCircleAll(currPos, _hitRadius);
-
-        foreach (Collider2D col in overlaps)
+        if (distance < 0.0001f)
         {
+            // Single overlap at current position.
+            if (TryPredictAtPosition(visual, currPos)) return;
+            return;
+        }
+
+        int sampleCount = Mathf.CeilToInt(distance / _hitRadius) + 1;
+
+        for (int i = 0; i <= sampleCount; i++)
+        {
+            float t = (float)i / sampleCount;
+            Vector2 samplePos = Vector2.Lerp(prevPos, currPos, t);
+
+            if (TryPredictAtPosition(visual, samplePos))
+                return;
+        }
+    }
+
+    /// <summary>
+    /// Single-sample overlap check used by the multi-sample predictor.
+    /// Returns true if a predicted hit was triggered at this position.
+    /// </summary>
+    private bool TryPredictAtPosition(ArrowVisual visual, Vector2 samplePos)
+    {
+        int count = Physics2D.OverlapCircleNonAlloc(
+            samplePos, _hitRadius, _predictionOverlaps);
+
+        for (int i = 0; i < count; i++)
+        {
+            Collider2D col = _predictionOverlaps[i];
+            if (col == null) continue;
+
             // Skip self.
             if (col.transform.root == _networkObject.transform.root) continue;
 
@@ -304,35 +339,19 @@ public class ArrowVisualManager
                 && target.InputAuthority != _networkObject.InputAuthority
                 && target.GetComponent<IHittable>() != null)
             {
-                visual.PredictHit(currPos, _hitVfxPrefab);
-                return;
+                visual.PredictHit(samplePos, _hitVfxPrefab);
+                return true;
             }
 
             // Solid environment (non-destructible)?
             if (IsEnvironmentLayer(col) && col.GetComponent<Destructible>() == null)
             {
-                visual.PredictHit(currPos, _hitVfxPrefab);
-                return;
+                visual.PredictHit(samplePos, _hitVfxPrefab);
+                return true;
             }
         }
-    }
 
-    /// <summary>
-    /// Proxy-side prediction: checks if an incoming arrow overlaps the local player
-    /// so the hit feels instant even though the arrow belongs to a remote shooter.
-    /// </summary>
-    private void PredictProxyHit(ArrowVisual visual, Vector2 currPos, NetworkObject localPlayer)
-    {
-        Collider2D[] overlaps = Physics2D.OverlapCircleAll(currPos, _hitRadius);
-
-        foreach (Collider2D col in overlaps)
-        {
-            if (col.transform.root == localPlayer.transform.root)
-            {
-                visual.PredictHit(currPos, _hitVfxPrefab);
-                return;
-            }
-        }
+        return false;
     }
 
     // ════════════════════════════════════════
@@ -375,10 +394,5 @@ public class ArrowVisualManager
     private bool IsEnvironmentLayer(Collider2D col)
     {
         return ((1 << col.gameObject.layer) & _environmentLayer) != 0;
-    }
-
-    private static bool HasMoved(Vector2 a, Vector2 b)
-    {
-        return (b - a).sqrMagnitude > 0.000001f;
     }
 }

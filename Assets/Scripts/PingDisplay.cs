@@ -1,14 +1,8 @@
 using Fusion;
 using UnityEngine;
 
-/// <summary>
-/// Displays the local client's RTT (round-trip time) to the server in the
-/// top-right corner of the screen. Scales against a 1920x1080 reference
-/// resolution so it looks consistent on any display. Drop on any GameObject.
-/// </summary>
 public class PingDisplay : MonoBehaviour
 {
-    // ── Reference resolution ──
     private const float REF_WIDTH = 1920f;
     private const float REF_HEIGHT = 1080f;
 
@@ -24,8 +18,14 @@ public class PingDisplay : MonoBehaviour
     [SerializeField] private int _goodThresholdMs = 60;
     [SerializeField] private int _okThresholdMs = 120;
 
+    [Header("Update Settings")]
+    [SerializeField] private float _updateInterval = 0.1f; // seconds (100 ms)
+
     private GUIStyle _style;
     private NetworkRunner _runner;
+
+    private float _nextUpdateTime;
+    private int _cachedPing;
 
     private void OnGUI()
     {
@@ -35,8 +35,16 @@ public class PingDisplay : MonoBehaviour
             if (_runner == null) return;
         }
 
-        // Use the smaller of the two scales so text never overflows on
-        // ultrawide or extra-tall displays.
+        // Update ping only every X seconds
+        if (Time.unscaledTime >= _nextUpdateTime)
+        {
+            _cachedPing = Mathf.RoundToInt(
+                (float)_runner.GetPlayerRtt(_runner.LocalPlayer) * 1000f
+            );
+
+            _nextUpdateTime = Time.unscaledTime + _updateInterval;
+        }
+
         float scale = Mathf.Min(
             Screen.width / REF_WIDTH,
             Screen.height / REF_HEIGHT);
@@ -56,11 +64,9 @@ public class PingDisplay : MonoBehaviour
             };
         }
 
-        int pingMs = Mathf.RoundToInt((float)_runner.GetPlayerRtt(_runner.LocalPlayer) * 1000f);
-
         _style.normal.textColor =
-            pingMs <= _goodThresholdMs ? _goodColor :
-            pingMs <= _okThresholdMs ? _okColor :
+            _cachedPing <= _goodThresholdMs ? _goodColor :
+            _cachedPing <= _okThresholdMs ? _okColor :
             _badColor;
 
         var rect = new Rect(
@@ -69,7 +75,7 @@ public class PingDisplay : MonoBehaviour
             scaledBoxWidth,
             scaledBoxHeight);
 
-        GUI.Label(rect, $"Ping: {pingMs} ms", _style);
+        GUI.Label(rect, $"Ping: {_cachedPing} ms", _style);
     }
 
     private static NetworkRunner FindRunner()

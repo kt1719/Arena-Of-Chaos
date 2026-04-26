@@ -9,6 +9,10 @@ using UnityEngine;
 public class BowWeapon : BaseWeapon
 {
     // ===== Constants =====
+    // Bumped from 8 to 32 per Photon's recommended capacity. With prediction +
+    // resimulation, the shooter can briefly run ahead of the server's fire count;
+    // the wider ring prevents in-flight arrows being overwritten by new fires
+    // and gives headroom for future fire-rate increases.
     private const int BUFFER_CAPACITY = 32;
 
     // ===== Events =====

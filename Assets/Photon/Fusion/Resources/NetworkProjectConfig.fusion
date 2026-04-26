@@ -43,9 +43,9 @@
         "EnableEncryption": false
     },
     "NetworkConditions": {
-        "Enabled": false,
+        "Enabled": true,
         "DelayShape": 0,
-        "DelayMin": 0.05000000074505806,
+        "DelayMin": 0.07000000029802323,
         "DelayMax": 0.20000000298023225,
         "DelayPeriod": 0.0,
         "DelayThreshold": 0.0,

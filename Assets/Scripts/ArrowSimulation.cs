@@ -75,10 +75,10 @@ public class ArrowSimulation
         Vector2 prevPos = data.GetPositionAtTick(_runner.Tick - 1, _runner.DeltaTime, _arrowSpeed);
         Vector2 currPos = data.GetPositionAtTick(_runner.Tick, _runner.DeltaTime, _arrowSpeed);
 
-        // Entity overlap runs even on the fire tick (zero movement) —
-        // at close range the arrow may already overlap a target at FirePosition.
+        // Multi-sample swept entity check — covers everything between prevPos and currPos.
+        // Also handles the fire-tick zero-movement edge case internally.
         if (_hitDetection.DetectEntityHit(
-                ref data, currPos, index, buffer,
+                ref data, prevPos, currPos, index, buffer,
                 _damage, data.FireDirection, _knockbackForce, _knockbackDuration))
             return;
 
