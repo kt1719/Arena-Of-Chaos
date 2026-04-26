@@ -9,7 +9,7 @@ using UnityEngine;
 public class BowWeapon : BaseWeapon
 {
     // ===== Constants =====
-    private const int BUFFER_CAPACITY = 8;
+    private const int BUFFER_CAPACITY = 32;
 
     // ===== Events =====
     public event Action OnBowShoot;
