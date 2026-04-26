@@ -24,7 +24,7 @@ public class BowWeapon : BaseWeapon
     [SerializeField] private GameObject arrowVisualPrefab;
 
     [Header("Arrow Properties")]
-    [SerializeField] private float _arrowSpeed = 12f;
+    [SerializeField] private float _arrowSpeed = 13f;
     [SerializeField] private float _arrowLifetime = 3f;
 
     [Header("Hit Detection")]
