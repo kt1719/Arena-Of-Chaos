@@ -2,70 +2,96 @@ using Fusion;
 using UnityEngine;
 
 /// <summary>
-/// Ticks active arrows in the NetworkArray buffer each FixedUpdateNetwork.
-/// Handles lifetime expiry, position calculation, and delegates hit detection.
-/// Plain C# class — not a MonoBehaviour.
+/// Ticks every active arrow in the networked ring buffer each FixedUpdateNetwork.
+/// Handles lifetime expiry, position sampling, and delegates hit detection.
+/// Plain C# — not a MonoBehaviour.
 /// </summary>
 public class ArrowSimulation
 {
-    // ===== Config =====
+    // ── Movement ──
     private NetworkRunner _runner;
     private float _arrowSpeed;
-    private int _lifetimeInTicks;
+    private int _lifetimeTicks;
 
-    // ===== Hit Detection Params (from WeaponInfo) =====
+    // ── Damage (forwarded to hit detection) ──
     private int _damage;
     private float _knockbackForce;
     private float _knockbackDuration;
 
-    // ===== Subsystems =====
+    // ── Subsystem ──
     private readonly ArrowHitDetection _hitDetection = new();
 
-    public void Init(NetworkRunner runner, PlayerRef inputAuthority, float arrowSpeed, float arrowLifetime,
-        float hitRadius, LayerMask environmentLayer, int damage, float knockbackForce, float knockbackDuration) {
+    /// <summary>Minimum movement magnitude to run directional raycasts.</summary>
+    private const float MIN_MOVE_THRESHOLD = 0.001f;
 
+    public void Init(
+        NetworkRunner runner, PlayerRef owner,
+        float arrowSpeed, float arrowLifetime,
+        float hitRadius, LayerMask environmentLayer,
+        int damage, float knockbackForce, float knockbackDuration)
+    {
         _runner = runner;
         _arrowSpeed = arrowSpeed;
-        _lifetimeInTicks = Mathf.CeilToInt(arrowLifetime / runner.DeltaTime);
+        _lifetimeTicks = Mathf.CeilToInt(arrowLifetime / runner.DeltaTime);
         _damage = damage;
         _knockbackForce = knockbackForce;
         _knockbackDuration = knockbackDuration;
 
-        _hitDetection.Init(runner, inputAuthority, hitRadius, environmentLayer);
+        _hitDetection.Init(runner, owner, hitRadius, environmentLayer);
     }
 
     /// <summary>
     /// Called each FixedUpdateNetwork by BowWeapon (state authority only).
-    /// Iterates all active arrows: expires, moves, detects hits.
+    /// Iterates all active arrows: expires stale ones, then runs hit detection.
     /// </summary>
-    public void Tick(NetworkArray<ArrowData> buffer, int bufferCapacity) {
-        for (int i = 0; i < bufferCapacity; i++) {
+    public void Tick(NetworkArray<ArrowData> buffer, int capacity)
+    {
+        for (int i = 0; i < capacity; i++)
+        {
             var data = buffer[i];
             if (!data.IsActive || data.IsFinished) continue;
 
-            if (_runner.Tick - data.FireTick >= _lifetimeInTicks) {
-                data.FinishTick = _runner.Tick;
-                data.IsActive = false;
-                buffer.Set(i, data);
-                continue;
-            }
+            if (TryExpire(ref data, i, buffer)) continue;
 
-            Vector2 prevPos = data.GetPositionAtTick(_runner.Tick - 1, _runner.DeltaTime, _arrowSpeed);
-            Vector2 currPos = data.GetPositionAtTick(_runner.Tick, _runner.DeltaTime, _arrowSpeed);
-            Vector2 moveDir = currPos - prevPos;
-            float moveDist = moveDir.magnitude;
-
-            // Always run entity hit detection even on the fire tick when movement is zero.
-            // At close range the arrow may overlap a target at FirePosition with no movement.
-            if (_hitDetection.DetectEntityHit(ref data, currPos, i, buffer,
-                _damage, data.FireDirection, _knockbackForce, _knockbackDuration)) continue;
-
-            // Environment and destructible checks require a ray direction — skip when stationary.
-            if (moveDist < 0.001f) continue;
-
-            if (_hitDetection.DetectEnvironmentHit(ref data, prevPos, moveDir.normalized, moveDist, i, buffer)) continue;
-
-            _hitDetection.DetectDestructibleHit(prevPos, moveDir.normalized, moveDist);
+            TickArrow(ref data, i, buffer);
         }
+    }
+
+    // ════════════════════════════════════════
+    //  Per-Arrow Logic
+    // ════════════════════════════════════════
+
+    private bool TryExpire(ref ArrowData data, int index, NetworkArray<ArrowData> buffer)
+    {
+        if (_runner.Tick - data.FireTick < _lifetimeTicks) return false;
+
+        data.Resolve(Vector2.zero, _runner.Tick);
+        buffer.Set(index, data);
+        return true;
+    }
+
+    private void TickArrow(ref ArrowData data, int index, NetworkArray<ArrowData> buffer)
+    {
+        Vector2 prevPos = data.GetPositionAtTick(_runner.Tick - 1, _runner.DeltaTime, _arrowSpeed);
+        Vector2 currPos = data.GetPositionAtTick(_runner.Tick, _runner.DeltaTime, _arrowSpeed);
+
+        // Entity overlap runs even on the fire tick (zero movement) —
+        // at close range the arrow may already overlap a target at FirePosition.
+        if (_hitDetection.DetectEntityHit(
+                ref data, currPos, index, buffer,
+                _damage, data.FireDirection, _knockbackForce, _knockbackDuration))
+            return;
+
+        // Directional raycasts need a movement vector — skip when stationary.
+        Vector2 moveDir = currPos - prevPos;
+        float moveDist = moveDir.magnitude;
+        if (moveDist < MIN_MOVE_THRESHOLD) return;
+
+        Vector2 moveNorm = moveDir / moveDist;
+
+        if (_hitDetection.DetectEnvironmentHit(ref data, prevPos, moveNorm, moveDist, index, buffer))
+            return;
+
+        _hitDetection.DetectDestructibleHit(prevPos, moveNorm, moveDist);
     }
 }

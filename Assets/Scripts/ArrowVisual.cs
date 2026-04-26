@@ -2,149 +2,160 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// Visual representation of an arrow. Pool-friendly — does not self-destroy.
-/// Manages its own TrailRenderer lifecycle for clean reuse.
+/// Visual representation of a single arrow projectile.
+/// Pool-friendly — never self-destroys; always returned via <see cref="OnReturnToPool"/>.
+/// Owns its own TrailRenderer lifecycle for clean reuse.
 /// </summary>
 public class ArrowVisual : MonoBehaviour
 {
-    // ===== Constants =====
+    // ── Constants ──
     private const float PREDICTION_TIMEOUT = 0.5f;
 
-    // ===== Public State =====
+    // ── Identity (set once per spawn) ──
     public int BufferIndex { get; private set; }
     public int FireTick { get; private set; }
     public Vector2 SnapshotPosition { get; private set; }
     public Vector2 SnapshotDirection { get; private set; }
+
+    // ── Prediction State ──
     public bool IsPredictedHit { get; private set; }
     public bool PredictionTimerExpired => _predictionTimer <= 0f;
 
     /// <summary>
-    /// Called when this visual is finished and should be returned to the pool.
-    /// Set by ArrowVisualManager after retrieving from pool.
+    /// Callback used by the pool owner to reclaim this visual.
+    /// Set by <see cref="ArrowVisualManager"/> after retrieval from pool.
     /// </summary>
     public Action<ArrowVisual> OnReturnToPool { get; set; }
 
-    // ===== Private Fields =====
-    private Renderer[] _cachedRenderers;
-    private TrailRenderer _trailRenderer;
+    // ── Cached Components ──
+    private Renderer[] _renderers;
+    private TrailRenderer _trail;
+
+    // ── Internal State ──
     private bool _vfxPlayed;
     private float _predictionTimer;
 
-    private void Awake() {
-        _cachedRenderers = GetComponentsInChildren<Renderer>();
-        _trailRenderer = GetComponentInChildren<TrailRenderer>();
+    // ════════════════════════════════════════
+    //  Lifecycle
+    // ════════════════════════════════════════
+
+    private void Awake()
+    {
+        _renderers = GetComponentsInChildren<Renderer>();
+        _trail = GetComponentInChildren<TrailRenderer>();
     }
 
     /// <summary>
-    /// Resets all state for clean reuse from pool.
-    /// Called internally by Init and can be called externally for manual reset.
+    /// Initialises identity fields and resets all mutable state for a fresh spawn.
     /// </summary>
-    public void ResetForReuse() {
-        IsPredictedHit = false;
-        _vfxPlayed = false;
-        _predictionTimer = PREDICTION_TIMEOUT;
-
-        SetRenderersEnabled(true);
-
-        if (_trailRenderer != null) {
-            _trailRenderer.emitting = false;
-            _trailRenderer.Clear();
-        }
-    }
-
-    public void Init(int bufferIndex, int fireTick, Vector2 direction, Vector2 position) {
+    public void Init(int bufferIndex, int fireTick, Vector2 direction, Vector2 position)
+    {
         BufferIndex = bufferIndex;
         FireTick = fireTick;
         SnapshotPosition = position;
         SnapshotDirection = direction;
-        ResetForReuse();
+
+        ResetVisualState();
 
         transform.position = (Vector3)position;
-
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        transform.rotation = Quaternion.Euler(0, 0, angle);
+        transform.rotation = Quaternion.Euler(0f, 0f, angle);
     }
 
-    public void UpdatePosition(Vector3 newPosition) {
-        transform.position = newPosition;
+    // ════════════════════════════════════════
+    //  Position & Trail
+    // ════════════════════════════════════════
+
+    public void SetPosition(Vector3 worldPos) => transform.position = worldPos;
+
+    public void ClearTrail()
+    {
+        if (_trail != null) _trail.Clear();
     }
 
-    /// <summary>
-    /// Clears the trail so no stale segments are drawn after a teleport or reactivation.
-    /// </summary>
-    public void ClearTrail() {
-        if (_trailRenderer != null) {
-            _trailRenderer.Clear();
-        }
+    public void SetTrailEmitting(bool emitting)
+    {
+        if (_trail != null) _trail.emitting = emitting;
     }
 
-    /// <summary>
-    /// Disables trail emission. The TrailRenderer stops recording new positions.
-    /// </summary>
-    public void PauseTrail() {
-        if (_trailRenderer != null) {
-            _trailRenderer.emitting = false;
-        }
-    }
+    // ════════════════════════════════════════
+    //  Client-Side Hit Prediction
+    // ════════════════════════════════════════
 
     /// <summary>
-    /// Enables trail emission. The TrailRenderer begins recording positions.
+    /// Hides the arrow and plays a predicted-hit VFX.
+    /// The visual stays alive so the manager can confirm or roll back.
     /// </summary>
-    public void ResumeTrail() {
-        if (_trailRenderer != null) {
-            _trailRenderer.emitting = true;
-        }
-    }
-
-    public void PredictHit(Vector2 hitPosition, Transform vfxPrefab) {
+    public void PredictHit(Vector2 hitPosition, Transform vfxPrefab)
+    {
         IsPredictedHit = true;
         _predictionTimer = PREDICTION_TIMEOUT;
 
-        SetRenderersEnabled(false);
-        PauseTrail();
+        SetRenderersVisible(false);
+        SetTrailEmitting(false);
         PlayVFX(hitPosition, vfxPrefab);
     }
 
-    public void TickPredictionTimer(float deltaTime) {
-        _predictionTimer -= deltaTime;
-    }
+    public void TickPredictionTimer(float deltaTime) => _predictionTimer -= deltaTime;
 
-    public void RecoverFromMisprediction() {
+    /// <summary>
+    /// Server didn't confirm the hit within the timeout — make the arrow visible again.
+    /// </summary>
+    public void RecoverFromMisprediction()
+    {
         IsPredictedHit = false;
         _predictionTimer = PREDICTION_TIMEOUT;
 
-        SetRenderersEnabled(true);
+        SetRenderersVisible(true);
         ClearTrail();
-        ResumeTrail();
+        SetTrailEmitting(true);
     }
 
+    // ════════════════════════════════════════
+    //  Terminal States
+    // ════════════════════════════════════════
+
     /// <summary>
-    /// Called when the arrow has a confirmed hit. Plays VFX and returns to pool.
+    /// Server-confirmed hit. Plays VFX and signals the pool to reclaim this visual.
     /// </summary>
-    public void Finish(Vector3 hitPosition, Transform vfxPrefab) {
+    public void Finish(Vector3 hitPosition, Transform vfxPrefab)
+    {
         PlayVFX(hitPosition, vfxPrefab);
-        OnReturnToPool?.Invoke(this);
+        ReturnToPool();
     }
 
     /// <summary>
-    /// Called when the arrow expires (lifetime ended, no hit). Returns to pool.
+    /// Arrow expired (lifetime ended, no hit). Signals the pool to reclaim.
     /// </summary>
-    public void Expire() {
-        OnReturnToPool?.Invoke(this);
+    public void Expire() => ReturnToPool();
+
+    // ════════════════════════════════════════
+    //  Internals
+    // ════════════════════════════════════════
+
+    private void ResetVisualState()
+    {
+        IsPredictedHit = false;
+        _vfxPlayed = false;
+        _predictionTimer = PREDICTION_TIMEOUT;
+
+        SetRenderersVisible(true);
+        SetTrailEmitting(false);
+        ClearTrail();
     }
 
-    // ===== Helpers =====
-
-    private void SetRenderersEnabled(bool enabled) {
-        for (int i = 0; i < _cachedRenderers.Length; i++) {
-            _cachedRenderers[i].enabled = enabled;
-        }
+    private void SetRenderersVisible(bool visible)
+    {
+        for (int i = 0; i < _renderers.Length; i++)
+            _renderers[i].enabled = visible;
     }
 
-    private void PlayVFX(Vector2 position, Transform vfxPrefab) {
+    private void PlayVFX(Vector2 position, Transform vfxPrefab)
+    {
         if (vfxPrefab == null || _vfxPlayed) return;
-
         _vfxPlayed = true;
         Instantiate(vfxPrefab, (Vector3)position, Quaternion.identity);
     }
+
+    private void ReturnToPool() => OnReturnToPool?.Invoke(this);
 }

@@ -2,9 +2,13 @@ using Fusion;
 using Pathfinding;
 using UnityEngine;
 
+/// <summary>
+/// Networked A* pathfinding for enemies.
+/// Recalculates paths on a timer and follows waypoints via Rigidbody2D velocity.
+/// </summary>
 public class EnemyPathfinding : NetworkBehaviour
 {
-    // ===== Serialized Fields =====
+    // ── Tuning ──
     [Header("Movement")]
     [SerializeField] private float _moveSpeed = 2.5f;
 
@@ -12,141 +16,154 @@ public class EnemyPathfinding : NetworkBehaviour
     [SerializeField] private float _pathRecalcInterval = 0.5f;
     [SerializeField] private float _nextWaypointDistance = 0.5f;
 
-    // ===== Public Properties =====
+    // ── Public State ──
     public bool FacingLeft => _facingLeft;
 
-    // ===== Private Variables =====
+    // ── Components ──
     private Rigidbody2D _rb;
     private Seeker _seeker;
 
-    private MovementState _state;
+    // ── Runtime State ──
+    private MoveState _state;
     private Vector2 _targetPosition;
     private bool _facingLeft;
 
+    // ── Path State ──
     private Pathfinding.Path _currentPath;
-    private int _currentWaypoint;
-    private float _pathRecalcTimer;
+    private int _waypointIndex;
+    private float _recalcTimer;
 
-    private enum MovementState { Idle, Following, Paused }
+    private enum MoveState { Idle, Following, Paused }
 
-    // ===== Lifecycle =====
+    // ════════════════════════════════════════
+    //  Lifecycle
+    // ════════════════════════════════════════
 
-    private void Awake() {
+    private void Awake()
+    {
         _rb = GetComponent<Rigidbody2D>();
         _seeker = GetComponent<Seeker>();
     }
 
-    public override void FixedUpdateNetwork() {
+    public override void FixedUpdateNetwork()
+    {
         if (!HasStateAuthority) return;
 
-        if (_state != MovementState.Following)
+        switch (_state)
         {
-            if (_state == MovementState.Paused)
+            case MoveState.Paused:
                 SetVelocity(Vector2.zero);
+                return;
 
-            return;
+            case MoveState.Following:
+                TickPathMovement();
+                return;
+
+            // Idle — do nothing.
         }
-
-        TickPathMovement();
     }
 
-    // ===== Public API =====
+    // ════════════════════════════════════════
+    //  Public API
+    // ════════════════════════════════════════
 
-    public void SetTargetPosition(Vector2 targetPosition) {
-        _targetPosition = targetPosition;
-
-        if (_state == MovementState.Following)
-            return;
-
-        _state = MovementState.Following;
+    public void SetTargetPosition(Vector2 target)
+    {
+        _targetPosition = target;
+        if (_state != MoveState.Following)
+            _state = MoveState.Following;
     }
 
-    public void SetSpeed(float speed) {
-        _moveSpeed = speed;
-    }
+    public void SetSpeed(float speed) => _moveSpeed = speed;
 
-    public void StopMovement() {
-        _state = MovementState.Idle;
+    public void StopMovement()
+    {
+        _state = MoveState.Idle;
         _currentPath = null;
-        _pathRecalcTimer = 0f;
+        _recalcTimer = 0f;
         SetVelocity(Vector2.zero);
     }
 
-    public void ResumeMovement() {
-        _state = MovementState.Following;
+    public void ResumeMovement() => _state = MoveState.Following;
+
+    public void SetPaused(bool paused)
+    {
+        if (paused && _state == MoveState.Following)
+            _state = MoveState.Paused;
+        else if (!paused && _state == MoveState.Paused)
+            _state = MoveState.Following;
     }
 
-    public void SetPaused(bool paused) {
-        if (paused && _state == MovementState.Following)
-            _state = MovementState.Paused;
-        else if (!paused && _state == MovementState.Paused)
-            _state = MovementState.Following;
-    }
+    // ════════════════════════════════════════
+    //  Path Following
+    // ════════════════════════════════════════
 
-    // ===== A* Path Following =====
-
-    private void TickPathMovement() {
+    private void TickPathMovement()
+    {
         RecalculatePathIfNeeded();
-        FollowCurrentPath();
+        FollowPath();
     }
 
-    private void RecalculatePathIfNeeded() {
-        _pathRecalcTimer -= Runner.DeltaTime;
-        if (_pathRecalcTimer > 0f) return;
-        if (!_seeker.IsDone()) return;
+    private void RecalculatePathIfNeeded()
+    {
+        _recalcTimer -= Runner.DeltaTime;
+        if (_recalcTimer > 0f || !_seeker.IsDone()) return;
 
-        _pathRecalcTimer = _pathRecalcInterval;
-
-        Vector2 endPos = SnapToWalkableNode(_targetPosition);
-        _seeker.StartPath(transform.position, endPos, OnPathComplete);
+        _recalcTimer = _pathRecalcInterval;
+        Vector2 destination = SnapToWalkableNode(_targetPosition);
+        _seeker.StartPath(transform.position, destination, OnPathComplete);
     }
 
-    private void OnPathComplete(Pathfinding.Path p) {
-        if (p.error) return;
-
-        _currentPath = p;
-        _currentWaypoint = 0;
+    private void OnPathComplete(Pathfinding.Path path)
+    {
+        if (path.error) return;
+        _currentPath = path;
+        _waypointIndex = 0;
     }
 
-    private void FollowCurrentPath() {
+    private void FollowPath()
+    {
         if (_currentPath == null) return;
 
         AdvancePastReachedWaypoints();
 
-        if (_currentWaypoint >= _currentPath.vectorPath.Count)
+        if (_waypointIndex >= _currentPath.vectorPath.Count)
         {
             SetVelocity(Vector2.zero);
             return;
         }
 
-        Vector2 direction = (Vector2)_currentPath.vectorPath[_currentWaypoint] - (Vector2)transform.position;
+        Vector2 direction = (Vector2)_currentPath.vectorPath[_waypointIndex] - (Vector2)transform.position;
         SetVelocity(direction.normalized * _moveSpeed);
         UpdateFacing(direction);
     }
 
-    private void AdvancePastReachedWaypoints() {
-        while (_currentWaypoint < _currentPath.vectorPath.Count)
+    private void AdvancePastReachedWaypoints()
+    {
+        while (_waypointIndex < _currentPath.vectorPath.Count)
         {
-            float distance = Vector2.Distance(transform.position, _currentPath.vectorPath[_currentWaypoint]);
-            if (distance >= _nextWaypointDistance) break;
-            _currentWaypoint++;
+            float dist = Vector2.Distance(transform.position, _currentPath.vectorPath[_waypointIndex]);
+            if (dist >= _nextWaypointDistance) break;
+            _waypointIndex++;
         }
     }
 
-    // ===== Helpers =====
+    // ════════════════════════════════════════
+    //  Helpers
+    // ════════════════════════════════════════
 
-    private Vector2 SnapToWalkableNode(Vector2 position) {
+    private Vector2 SnapToWalkableNode(Vector2 position)
+    {
         if (AstarPath.active == null) return position;
 
         var nearest = AstarPath.active.GetNearest(position, NNConstraint.Default);
         return nearest.node != null ? (Vector3)nearest.node.position : position;
     }
 
-    private void SetVelocity(Vector2 velocity) {
-        _rb.linearVelocity = velocity;
-    }
+    private void SetVelocity(Vector2 velocity) => _rb.linearVelocity = velocity;
 
-    private void UpdateFacing(Vector2 direction) {
+    private void UpdateFacing(Vector2 direction)
+    {
         if (Mathf.Abs(direction.x) > 0.01f)
             _facingLeft = direction.x < 0f;
     }
