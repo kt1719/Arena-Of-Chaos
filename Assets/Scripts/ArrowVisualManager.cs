@@ -204,10 +204,10 @@ public class ArrowVisualManager
                 ? data.HitPosition
                 : (Vector2)visual.transform.position;
 
-            visual.Finish((Vector3)hitPos, _hitVfxPrefab);
+            visual.PlayHitVFX(hitPos, _hitVfxPrefab);
         }
 
-        // Whether predicted or confirmed, the slot is done.
+        // Single recycle path — RecycleSlot handles pool return.
         RecycleSlot(index);
         return true;
     }
@@ -216,8 +216,8 @@ public class ArrowVisualManager
     private bool TryExpire(int index, ArrowVisual visual, ArrowData data)
     {
         if (data.IsActive) return false;
-        visual.Expire();
-        _activeVisuals[index] = null;
+        // Single recycle path — RecycleSlot handles pool return.
+        RecycleSlot(index);
         return true;
     }
 

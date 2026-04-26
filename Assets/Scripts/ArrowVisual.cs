@@ -34,6 +34,7 @@ public class ArrowVisual : MonoBehaviour
     // ── Internal State ──
     private bool _vfxPlayed;
     private float _predictionTimer;
+    private bool _pooled;
 
     // ════════════════════════════════════════
     //  Lifecycle
@@ -54,6 +55,7 @@ public class ArrowVisual : MonoBehaviour
         FireTick = fireTick;
         SnapshotPosition = position;
         SnapshotDirection = direction;
+        _pooled = false;
 
         ResetVisualState();
 
@@ -116,6 +118,15 @@ public class ArrowVisual : MonoBehaviour
     // ════════════════════════════════════════
 
     /// <summary>
+    /// Plays the hit VFX without returning to pool.
+    /// Used by the manager when it handles recycling separately.
+    /// </summary>
+    public void PlayHitVFX(Vector2 position, Transform vfxPrefab)
+    {
+        PlayVFX(position, vfxPrefab);
+    }
+
+    /// <summary>
     /// Server-confirmed hit. Plays VFX and signals the pool to reclaim this visual.
     /// </summary>
     public void Finish(Vector3 hitPosition, Transform vfxPrefab)
@@ -157,5 +168,10 @@ public class ArrowVisual : MonoBehaviour
         Instantiate(vfxPrefab, (Vector3)position, Quaternion.identity);
     }
 
-    private void ReturnToPool() => OnReturnToPool?.Invoke(this);
+    private void ReturnToPool()
+    {
+        if (_pooled) return;
+        _pooled = true;
+        OnReturnToPool?.Invoke(this);
+    }
 }
