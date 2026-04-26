@@ -79,9 +79,8 @@ public class BowWeapon : BaseWeapon
     // ===== Attack =====
 
     protected override bool AttackAction() {
-        FireArrow();
-
         if (Runner.IsForward) {
+            FireArrow();
             OnBowShoot?.Invoke();
         }
 
