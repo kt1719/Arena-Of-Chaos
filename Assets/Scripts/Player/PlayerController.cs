@@ -4,7 +4,15 @@ using UnityEngine;
 
 public class PlayerController : NetworkBehaviour
 {
+    // ===== Networked Components =====
+    [Networked] private bool PlayerEnabled { get; set;} = false; // Initialised as false
+
+    // ===== Serialized Fields =====
+    [SerializeField] Transform playerVisuals;
+
+    // ===== Private Variables =====
     private PlayerControllerLocalInputData _localInputData;
+    private ChangeDetector _changeDetector;
 
     public override void Spawned() {
         if (HasInputAuthority) {
@@ -15,6 +23,9 @@ public class PlayerController : NetworkBehaviour
             GameInput.Instance.OnPlayerAttack += AttackPressed;
             GameInput.Instance.OnPlayerCancelAttack += AttackReleased;
         }
+
+        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+        playerVisuals.gameObject.SetActive(false);
     }
     
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -26,6 +37,16 @@ public class PlayerController : NetworkBehaviour
         GameInput.Instance.OnPlayerDash -= DashPressed;
         GameInput.Instance.OnPlayerAttack -= AttackPressed;
         GameInput.Instance.OnPlayerCancelAttack -= AttackReleased;
+    }
+
+    public override void Render() {
+        if (_changeDetector == null) return;
+
+        foreach (var change in _changeDetector.DetectChanges(this))
+        {
+            if (change == nameof(PlayerEnabled))
+                ChangePlayerEnable(PlayerEnabled);
+        }
     }
 
     private void DashPressed() {
@@ -42,6 +63,8 @@ public class PlayerController : NetworkBehaviour
 
     // ConsumeInput is called by NetworkManager to clear the input data
     public PlayerControllerLocalInputData ConsumeInput() {
+        if (!PlayerEnabled) {return default;} // If it is disabled do not allow for the player to move;
+
         _localInputData.movementDirection = GameInput.Instance.GetMovementInput();
         _localInputData.weaponAimDirection = GameInput.Instance.GetWeaponAimDirection(transform);
         
@@ -53,6 +76,12 @@ public class PlayerController : NetworkBehaviour
 
         // Return the snapshot
         return localInputDataCopy;
+    }
+
+    public void ChangePlayerEnable(bool active) {
+        
+        PlayerEnabled = active;
+        playerVisuals.gameObject.SetActive(true);
     }
 }
 

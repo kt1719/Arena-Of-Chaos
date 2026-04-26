@@ -24,6 +24,10 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     public NetworkObject LocalPlayerObject => _localPlayerController != null ? _localPlayerController.Object : null;
     public Dictionary<PlayerRef, NetworkObject> SpawnedCharacters { get; private set; } = new Dictionary<PlayerRef, NetworkObject>();
 
+    public NetworkObject GetNetworkObjectFromPlayerRef(PlayerRef playerRef) {
+        return SpawnedCharacters[playerRef];
+    } 
+
     // ===== Private Fields =====
     private PlayerController _localPlayerController;
     private NetworkRunner _runner;
@@ -47,9 +51,11 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 
     async void StartGameAsync(GameMode mode)
     {
-        // Create the Fusion runner and let it know that we will be providing user input
-        _runner = gameObject.AddComponent<NetworkRunner>();
-        _runner.ProvideInput = true;
+        if (_runner == null) {
+            // Create the Fusion runner and let it know that we will be providing user input
+            _runner = gameObject.AddComponent<NetworkRunner>();
+            _runner.ProvideInput = true;   
+        }
 
         var runnerSimulatePhysics2D = gameObject.AddComponent<RunnerSimulatePhysics2D>();
         runnerSimulatePhysics2D.ClientPhysicsSimulation = ClientPhysicsSimulation.SimulateAlways;

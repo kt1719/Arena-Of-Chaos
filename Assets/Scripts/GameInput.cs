@@ -92,6 +92,6 @@ public class GameInput : MonoBehaviour
     private Vector2 GetMouseInputWorldPos()
     {
         Vector2 mouseScreenPos = Input.mousePosition;
-        return Camera.main.ScreenToWorldPoint(mouseScreenPos);
+        return GameManager.Instance.CurrentActiveCamera.ScreenToWorldPoint(mouseScreenPos);
     }
 }
