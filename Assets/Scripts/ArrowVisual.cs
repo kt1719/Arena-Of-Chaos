@@ -17,6 +17,15 @@ public class ArrowVisual : MonoBehaviour
     public Vector2 SnapshotPosition { get; private set; }
     public Vector2 SnapshotDirection { get; private set; }
 
+    // ── First-Visible Timing ──
+    /// <summary>
+    /// The render time when this arrow first became visible on screen.
+    /// Used as the time origin for position calculation so proxy clients
+    /// see the arrow start at FirePosition instead of jumping ahead by
+    /// the network propagation delay.
+    /// </summary>
+    public float FirstVisibleRenderTime { get; private set; }
+
     // ── Prediction State ──
     public bool IsPredictedHit { get; private set; }
     public bool PredictionTimerExpired => _predictionTimer <= 0f;
@@ -56,6 +65,7 @@ public class ArrowVisual : MonoBehaviour
         SnapshotPosition = position;
         SnapshotDirection = direction;
         _pooled = false;
+        FirstVisibleRenderTime = -1f;
 
         ResetVisualState();
 
@@ -69,6 +79,16 @@ public class ArrowVisual : MonoBehaviour
     // ════════════════════════════════════════
 
     public void SetPosition(Vector3 worldPos) => transform.position = worldPos;
+
+    /// <summary>
+    /// Records the render time when this arrow first becomes visible.
+    /// Only records once — subsequent calls are no-ops.
+    /// </summary>
+    public void MarkFirstVisible(float renderTime)
+    {
+        if (FirstVisibleRenderTime < 0f)
+            FirstVisibleRenderTime = renderTime;
+    }
 
     public void ClearTrail()
     {

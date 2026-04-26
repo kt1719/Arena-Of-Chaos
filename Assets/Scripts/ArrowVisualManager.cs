@@ -240,8 +240,19 @@ public class ArrowVisualManager
             return false;
         }
 
+        float renderTime = _runner.LocalRenderTime;
+
+        // Anchor the visual's time origin to the first frame it becomes visible.
+        // On the input authority this is near-zero (fire tick just happened).
+        // On proxy clients, network delay makes the raw elapsed large — the arrow
+        // would appear far along its path instead of at the weapon barrel.
+        // Using FirstVisibleRenderTime as the baseline ensures the arrow always
+        // starts at FirePosition and flies forward at the correct speed.
+        visual.MarkFirstVisible(renderTime);
+        float visualElapsed = renderTime - visual.FirstVisibleRenderTime;
+
         // Position from snapshot — immune to resimulation mutations.
-        newPos = visual.SnapshotPosition + visual.SnapshotDirection * (_arrowSpeed * elapsed);
+        newPos = visual.SnapshotPosition + visual.SnapshotDirection * (_arrowSpeed * visualElapsed);
 
         if (!visual.gameObject.activeSelf)
         {
@@ -253,7 +264,7 @@ public class ArrowVisualManager
         prevPos = visual.transform.position;
         visual.SetPosition((Vector3)newPos);
 
-        if (elapsed >= TRAIL_START_DELAY)
+        if (visualElapsed >= TRAIL_START_DELAY)
             visual.SetTrailEmitting(true);
 
         return true;
