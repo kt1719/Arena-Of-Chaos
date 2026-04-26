@@ -17,6 +17,9 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     [SerializeField] private Button _startGameHostButton;
     [SerializeField] private Button _startGameClientButton;
 
+    // ===== Public Properties =====
+    public NetworkObject LocalPlayerObject => _localPlayerController != null ? _localPlayerController.Object : null;
+
     // ===== Private Fields =====
     private PlayerController _localPlayerController;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
