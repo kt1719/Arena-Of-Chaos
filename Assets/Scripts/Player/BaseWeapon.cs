@@ -15,7 +15,6 @@ public abstract class BaseWeapon : NetworkBehaviour {
     [SerializeField] protected WeaponInfo weaponInfo;
 
     // ===== Private Fields =====
-    private ChangeDetector _changeDetector;
     protected abstract bool AttackAction();
 
     public bool Attack() {
@@ -28,23 +27,18 @@ public abstract class BaseWeapon : NetworkBehaviour {
     }
 
     public override void Spawned() {
-        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
-
-        if (weaponParent != null) {
-            transform.parent = weaponParent.transform;
-            transform.localPosition = new Vector3(weaponInstantiationOffset.x, weaponInstantiationOffset.y, 0);
-        }
+        ApplyParenting();
     }
 
     public override void Render() {
-        foreach (var change in _changeDetector.DetectChanges(this)) {
-            switch (change) {
-                case nameof(weaponParent):
-                    transform.parent = weaponParent != null ? weaponParent.transform : null;
-                    transform.localPosition = new Vector3(weaponInstantiationOffset.x, weaponInstantiationOffset.y, 0);
-                    break;
-            }
+        if (weaponParent != null && transform.parent != weaponParent.transform) {
+            ApplyParenting();
         }
+    }
+
+    private void ApplyParenting() {
+        transform.parent = weaponParent != null ? weaponParent.transform : null;
+        transform.localPosition = new Vector3(weaponInstantiationOffset.x, weaponInstantiationOffset.y, 0);
     }
 
     public override void FixedUpdateNetwork()

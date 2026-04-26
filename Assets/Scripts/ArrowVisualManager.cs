@@ -2,22 +2,11 @@ using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
-/// <summary>
-/// Manages arrow visual lifecycle: pooling, spawning, position updates,
-/// client-side hit prediction, and cleanup.
-/// Plain C# class — not a MonoBehaviour.
-/// </summary>
 public class ArrowVisualManager
 {
-    // ===== Constants =====
-    /// <summary>
-    /// Seconds after fire before the trail starts emitting. Gives the networked
-    /// state time to settle (server confirmation, resimulation corrections) so
-    /// the TrailRenderer never records a discontinuous position jump.
-    /// </summary>
+    // Delay before trail emits — lets resimulation corrections settle first.
     private const float TRAIL_START_DELAY = 0.1f;
 
-    // ===== Config =====
     private int _bufferCapacity;
     private float _arrowSpeed;
     private float _hitRadius;
@@ -26,11 +15,9 @@ public class ArrowVisualManager
     private NetworkRunner _runner;
     private NetworkObject _networkObject;
 
-    // ===== Visual Tracking =====
     private ArrowVisual[] _activeVisuals;
     private int _visibleFireCount;
 
-    // ===== Object Pool =====
     private readonly Queue<ArrowVisual> _pool = new();
     private GameObject _prefab;
     private Transform _poolParent;
@@ -57,7 +44,6 @@ public class ArrowVisualManager
     // ===== Pool =====
 
     private void InitPool(int initialCount) {
-        // Create a persistent parent for pooled objects
         var poolGO = new GameObject("[ArrowVisualPool]");
         Object.DontDestroyOnLoad(poolGO);
         _poolParent = poolGO.transform;
@@ -72,17 +58,7 @@ public class ArrowVisualManager
     }
 
     private ArrowVisual Get(Vector2 position) {
-        ArrowVisual visual;
-
-        if (_pool.Count > 0) {
-            visual = _pool.Dequeue();
-            // Don't activate here — the caller controls visibility.
-            // Activating now would flash the visual at the stale pooled position
-            // for one frame before SpawnNewVisuals hides it again.
-        } else {
-            visual = CreateVisualInstance();
-        }
-
+        ArrowVisual visual = _pool.Count > 0 ? _pool.Dequeue() : CreateVisualInstance();
         visual.transform.position = (Vector3)position;
         return visual;
     }
@@ -106,10 +82,7 @@ public class ArrowVisualManager
     // ===== Visual Spawning =====
 
     public void SpawnNewVisuals(NetworkArray<ArrowData> buffer, int fireCount) {
-        // During host-client resimulation, _fireCount can momentarily drop to the
-        // host's confirmed value before resim re-increments it. Just reset the
-        // counter — don't destroy visuals. UpdateVisuals already handles stale
-        // visuals via the FireTick mismatch check.
+        // Resimulation can momentarily drop _fireCount — just reset the counter.
         if (_visibleFireCount > fireCount) {
             _visibleFireCount = fireCount;
         }
@@ -120,15 +93,12 @@ public class ArrowVisualManager
 
             ArrowVisual existing = _activeVisuals[index];
 
-            // If a visual already exists for this exact arrow, keep it.
-            // This prevents resimulation-induced re-spawns from destroying
-            // and recreating a visual that's already in flight.
+            // Skip if a visual already exists for this exact arrow (resimulation re-spawn guard).
             if (existing != null && existing.FireTick == data.FireTick) {
                 _visibleFireCount++;
                 continue;
             }
 
-            // Different arrow in this slot — recycle the old visual
             if (existing != null) {
                 Return(existing);
                 _activeVisuals[index] = null;
@@ -139,7 +109,7 @@ public class ArrowVisualManager
 
                 if (visual != null) {
                     visual.Init(index, data.FireTick, data.FireDirection, data.FirePosition);
-                    visual.gameObject.SetActive(false); // Hidden until render time catches up to fire tick
+                    visual.gameObject.SetActive(false);
                     _activeVisuals[index] = visual;
                 }
             }
@@ -152,9 +122,11 @@ public class ArrowVisualManager
 
     public void UpdateVisuals(NetworkArray<ArrowData> buffer) {
         bool isInputAuthority = _networkObject != null && _networkObject.HasInputAuthority;
-        float renderTime = (_networkObject != null && _networkObject.IsProxy)
-            ? _runner.RemoteRenderTime
-            : _runner.LocalRenderTime;
+        NetworkObject localPlayerObject = NetworkManager.Instance != null ? NetworkManager.Instance.LocalPlayerObject : null;
+
+        // LocalRenderTime for all clients — arrows are deterministic, no interpolation needed.
+        // RemoteRenderTime on proxies caused visuals to lag behind the server hitbox.
+        float renderTime = _runner.LocalRenderTime;
 
         for (int i = 0; i < _bufferCapacity; i++) {
             ArrowVisual visual = _activeVisuals[i];
@@ -162,99 +134,130 @@ public class ArrowVisualManager
 
             var data = buffer[i];
 
-            // Stale visual from rollback — buffer slot was overwritten
-            if (data.FireTick != visual.FireTick) {
-                Return(visual);
-                _activeVisuals[i] = null;
-                continue;
-            }
-
-            if (data.IsFinished) {
-                if (visual.IsPredictedHit) {
-                    // Already hidden by prediction — just return to pool once.
-                    Return(visual);
-                } else {
-                    Vector2 hitPos = data.HitPosition != Vector2.zero
-                        ? data.HitPosition
-                        : (Vector2)visual.transform.position;
-                    // Temporarily clear the callback to prevent Finish from also returning
-                    // to pool — we handle the return ourselves to avoid double-pooling.
-                    visual.OnReturnToPool = null;
-                    visual.Finish((Vector3)hitPos, _hitPredictionVFX);
-                    visual.OnReturnToPool = Return;
-                    Return(visual);
-                }
-
-                _activeVisuals[i] = null;
-                continue;
-            }
-
-            if (!data.IsActive) {
-                visual.Expire();
-                _activeVisuals[i] = null;
-                continue;
-            }
+            if (TryRecycleStaleVisual(i, visual, data)) continue;
+            if (TryFinishVisual(i, visual, data)) continue;
+            if (TryExpireVisual(i, visual, data)) continue;
 
             float elapsed = renderTime - data.FireTick * _runner.DeltaTime;
 
-            // Arrow was fired at tick N but LocalRenderTime interpolates between tick N-1 and N.
-            // Until render time catches up to the fire tick, elapsed is negative.
-            // Showing the arrow at FirePosition during this window causes it to visually
-            // pop ahead of the interpolated weapon barrel. Hide it for this sub-frame period.
-            if (elapsed < 0f) {
-                visual.gameObject.SetActive(false);
-                continue;
-            }
+            var positions = ComputeAndApplyPosition(visual, elapsed);
+            if (positions == null) continue;
 
-            // Position from snapshot — immune to resimulation mutations.
-            // The visual stores its own FirePosition/FireDirection from spawn time,
-            // so buffer corrections don't shift the trajectory mid-flight.
-            Vector2 newPos = visual.SnapshotPosition + visual.SnapshotDirection * _arrowSpeed * elapsed;
+            var (prevPos, newPos) = positions.Value;
 
-            if (!visual.gameObject.activeSelf) {
-                // Move transform to the correct position BEFORE activating so the
-                // TrailRenderer doesn't record a segment from the stale pooled position
-                // to the current computed position (the "snap" artifact).
-                visual.UpdatePosition((Vector3)newPos);
-                visual.ClearTrail();
-                visual.gameObject.SetActive(true);
-            }
+            RunPredictionTick(visual, prevPos, newPos, isInputAuthority, localPlayerObject);
+        }
+    }
 
-            Vector2 prevPos = visual.transform.position;
+    // ===== Visual Update Helpers =====
+
+    private bool TryRecycleStaleVisual(int index, ArrowVisual visual, ArrowData data) {
+        if (data.FireTick != visual.FireTick) {
+            Return(visual);
+            _activeVisuals[index] = null;
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool TryFinishVisual(int index, ArrowVisual visual, ArrowData data) {
+        if (!data.IsFinished) return false;
+
+        if (visual.IsPredictedHit) {
+            Return(visual);
+        } else {
+            Vector2 hitPos = data.HitPosition != Vector2.zero
+                ? data.HitPosition
+                : (Vector2)visual.transform.position;
+            // Clear callback to prevent Finish from double-pooling.
+            visual.OnReturnToPool = null;
+            visual.Finish((Vector3)hitPos, _hitPredictionVFX);
+            visual.OnReturnToPool = Return;
+            Return(visual);
+        }
+
+        _activeVisuals[index] = null;
+        return true;
+    }
+
+    private bool TryExpireVisual(int index, ArrowVisual visual, ArrowData data) {
+        if (data.IsActive) return false;
+
+        visual.Expire();
+        _activeVisuals[index] = null;
+        return true;
+    }
+
+    private (Vector2 prevPos, Vector2 newPos)? ComputeAndApplyPosition(ArrowVisual visual, float elapsed) {
+        // Negative elapsed = render time hasn't caught up to fire tick yet.
+        // Showing the arrow now would pop it ahead of the interpolated weapon barrel.
+        if (elapsed < 0f) {
+            visual.gameObject.SetActive(false);
+            return null;
+        }
+
+        // Position from snapshot — immune to resimulation mutations.
+        Vector2 newPos = visual.SnapshotPosition + visual.SnapshotDirection * _arrowSpeed * elapsed;
+
+        if (!visual.gameObject.activeSelf) {
+            // Position before activating so TrailRenderer doesn't record a snap artifact.
             visual.UpdatePosition((Vector3)newPos);
+            visual.ClearTrail();
+            visual.gameObject.SetActive(true);
+        }
 
-            // Delay trail emission for a fixed period after fire. This gives the
-            // networked state time to settle — any resimulation corrections happen
-            // during this window and the TrailRenderer never sees them.
-            // The arrow sprite is visible and moving during the delay; only the
-            // trail is suppressed.
-            if (elapsed >= TRAIL_START_DELAY) {
-                visual.ResumeTrail();
+        Vector2 prevPos = visual.transform.position;
+        visual.UpdatePosition((Vector3)newPos);
+
+        if (elapsed >= TRAIL_START_DELAY) {
+            visual.ResumeTrail();
+        }
+
+        return (prevPos, newPos);
+    }
+
+    private void RunPredictionTick(ArrowVisual visual, Vector2 prevPos, Vector2 newPos, bool isInputAuthority, NetworkObject localPlayerObject) {
+        if (isInputAuthority && !visual.IsPredictedHit) {
+            RunLocalHitPrediction(visual, prevPos, newPos);
+        }
+
+        if (!isInputAuthority && localPlayerObject != null && !visual.IsPredictedHit) {
+            // Skip arrows fired by the local player — those use the shooter prediction path above.
+            if (_runner.LocalPlayer != _networkObject.InputAuthority) {
+                RunProxyHitPrediction(visual, prevPos, newPos, localPlayerObject);
             }
+        }
 
-            if (isInputAuthority && !visual.IsPredictedHit) {
-                RunLocalHitPrediction(visual, prevPos, newPos);
-            }
+        if (visual.IsPredictedHit) {
+            visual.TickPredictionTimer(Time.deltaTime);
 
-            if (isInputAuthority && visual.IsPredictedHit) {
-                visual.TickPredictionTimer(Time.deltaTime);
-
-                if (visual.PredictionTimerExpired) {
-                    visual.RecoverFromMisprediction();
-                }
+            if (visual.PredictionTimerExpired) {
+                visual.RecoverFromMisprediction();
             }
         }
     }
 
     // ===== Client-Side Hit Prediction =====
 
+    private void RunProxyHitPrediction(ArrowVisual visual, Vector2 prevPos, Vector2 currPos, NetworkObject localPlayerObject) {
+        Vector2 moveDir = currPos - prevPos;
+        if (moveDir.magnitude < 0.001f) return;
+
+        Collider2D[] results = Physics2D.OverlapCircleAll(currPos, _hitRadius);
+
+        foreach (Collider2D col in results) {
+            if (col.transform.root == localPlayerObject.transform.root) {
+                visual.PredictHit(currPos, _hitPredictionVFX);
+                return;
+            }
+        }
+    }
+
     private void RunLocalHitPrediction(ArrowVisual visual, Vector2 prevPos, Vector2 currPos) {
         Vector2 moveDir = currPos - prevPos;
-        float moveDist = moveDir.magnitude;
+        if (moveDir.magnitude < 0.001f) return;
 
-        if (moveDist < 0.001f) return;
-
-        // Note: OverlapCircleAll still allocates — deferred per FR-2 scope (Render path only)
         Collider2D[] results = Physics2D.OverlapCircleAll(currPos, _hitRadius);
 
         foreach (Collider2D col in results) {
