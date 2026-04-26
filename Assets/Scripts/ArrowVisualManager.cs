@@ -240,8 +240,18 @@ public class ArrowVisualManager
             return false;
         }
 
+        float renderTime = _runner.LocalRenderTime;
+
+        // On the first frame with non-negative elapsed, record the render time.
+        // Subsequent frames measure elapsed relative to that moment so proxy clients
+        // see the arrow start at FirePosition instead of teleporting ahead.
+        if (!visual.HasBeenVisible)
+            visual.MarkFirstVisible(renderTime);
+
+        float visualElapsed = renderTime - visual.FirstVisibleRenderTime;
+
         // Position from snapshot — immune to resimulation mutations.
-        newPos = visual.SnapshotPosition + visual.SnapshotDirection * (_arrowSpeed * elapsed);
+        newPos = visual.SnapshotPosition + visual.SnapshotDirection * (_arrowSpeed * visualElapsed);
 
         if (!visual.gameObject.activeSelf)
         {
@@ -253,7 +263,7 @@ public class ArrowVisualManager
         prevPos = visual.transform.position;
         visual.SetPosition((Vector3)newPos);
 
-        if (elapsed >= TRAIL_START_DELAY)
+        if (visualElapsed >= TRAIL_START_DELAY)
             visual.SetTrailEmitting(true);
 
         return true;

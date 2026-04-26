@@ -17,6 +17,15 @@ public class ArrowVisual : MonoBehaviour
     public Vector2 SnapshotPosition { get; private set; }
     public Vector2 SnapshotDirection { get; private set; }
 
+    // ── Timing (set on first visible frame) ──
+    /// <summary>
+    /// The render time when this arrow first became visible.
+    /// Used to compute elapsed flight time relative to the proxy's first sighting,
+    /// preventing arrows from teleporting ahead on late-arriving state updates.
+    /// </summary>
+    public float FirstVisibleRenderTime { get; private set; }
+    public bool HasBeenVisible { get; private set; }
+
     // ── Prediction State ──
     public bool IsPredictedHit { get; private set; }
     public bool PredictionTimerExpired => _predictionTimer <= 0f;
@@ -56,6 +65,8 @@ public class ArrowVisual : MonoBehaviour
         SnapshotPosition = position;
         SnapshotDirection = direction;
         _pooled = false;
+        HasBeenVisible = false;
+        FirstVisibleRenderTime = 0f;
 
         ResetVisualState();
 
@@ -69,6 +80,17 @@ public class ArrowVisual : MonoBehaviour
     // ════════════════════════════════════════
 
     public void SetPosition(Vector3 worldPos) => transform.position = worldPos;
+
+    /// <summary>
+    /// Records the render time when this arrow first becomes visible.
+    /// Called once by the visual manager on the first frame with non-negative elapsed time.
+    /// </summary>
+    public void MarkFirstVisible(float renderTime)
+    {
+        if (HasBeenVisible) return;
+        HasBeenVisible = true;
+        FirstVisibleRenderTime = renderTime;
+    }
 
     public void ClearTrail()
     {
