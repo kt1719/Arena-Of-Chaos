@@ -12,6 +12,9 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     // ===== Static Reference =====
     public static NetworkManager Instance { get; private set; }
     
+    // ===== Events =====
+    public Action<NetworkObject> OnPlayerJoinedNetworkManager;
+
     // ===== Serialized Fields =====
     [SerializeField] private NetworkPrefabRef _playerPrefab;
     [SerializeField] private Button _startGameHostButton;
@@ -19,10 +22,10 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 
     // ===== Public Properties =====
     public NetworkObject LocalPlayerObject => _localPlayerController != null ? _localPlayerController.Object : null;
+    public Dictionary<PlayerRef, NetworkObject> SpawnedCharacters { get; private set; } = new Dictionary<PlayerRef, NetworkObject>();
 
     // ===== Private Fields =====
     private PlayerController _localPlayerController;
-    private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
     private NetworkRunner _runner;
 
     // ===== Unity Methods =====
@@ -85,30 +88,18 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
             Vector3 spawnPosition = Vector3.zero;
             Quaternion spawnRotation = Quaternion.identity;
 
-            if (GameManager.Instance == null)
-            {
-                Debug.LogError("[NetworkManager] GameManager instance not found. Spawning at Vector3.zero.");
-            }
-            else if (GameManager.Instance.DefaultPlayerSpawnPoint == null)
-            {
-                Debug.LogWarning("[NetworkManager] GameManager spawn point is null. Spawning at Vector3.zero.");
-            }
-            else
-            {
-                spawnPosition = GameManager.Instance.DefaultPlayerSpawnPoint.position;
-                spawnRotation = GameManager.Instance.DefaultPlayerSpawnPoint.rotation;
-            }
-
             NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, spawnRotation, player);
-            _spawnedCharacters.Add(player, networkPlayerObject);
+            SpawnedCharacters.Add(player, networkPlayerObject);
+            
+            OnPlayerJoinedNetworkManager?.Invoke(networkPlayerObject);
         }
     }
 
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) {
-        if (_spawnedCharacters.TryGetValue(player, out NetworkObject networkObject))
+        if (SpawnedCharacters.TryGetValue(player, out NetworkObject networkObject))
         {
             runner.Despawn(networkObject);
-            _spawnedCharacters.Remove(player);
+            SpawnedCharacters.Remove(player);
         }
     }
 
