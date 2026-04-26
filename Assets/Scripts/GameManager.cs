@@ -54,7 +54,10 @@ public class GameManager : NetworkBehaviour
     }
 
     private Camera GetActiveCamera() {
-        return (RoundStarted ? playerCamera : menuCamera).GetComponent<Camera>();
+        if (Object != null && Object.IsValid) // To check if Spawned() has been called
+            return (RoundStarted ? playerCamera : menuCamera).GetComponent<Camera>();
+        
+        return menuCamera.GetComponent<Camera>();
     }
 
     private void UpdateActiveCamera() {
