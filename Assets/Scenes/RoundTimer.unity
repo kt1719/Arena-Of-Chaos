@@ -16917,7 +16917,7 @@ PrefabInstance:
       objectReference: {fileID: 519420032}
     - target: {fileID: 5646395246079621779, guid: 1247fa1b752ac477d8961e6c77ef5143, type: 3}
       propertyPath: defaultRoundTime
-      value: 20
+      value: 120
       objectReference: {fileID: 0}
     - target: {fileID: 7123585461797344299, guid: 1247fa1b752ac477d8961e6c77ef5143, type: 3}
       propertyPath: m_LocalPosition.x
