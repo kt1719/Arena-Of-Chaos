@@ -21,6 +21,8 @@ public class PlayerMovement : NetworkBehaviour
     private Rigidbody2D _rb;
     private ChangeDetector _changeDetector;
 
+    public bool IsDashing => _isDashing;
+
     private float EffectiveSpeed => _isDashing
         ? _stats.MoveSpeed * _stats.DashSpeedMultiplier
         : _stats.MoveSpeed;

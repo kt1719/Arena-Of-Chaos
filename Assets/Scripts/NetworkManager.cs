@@ -31,6 +31,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     // ===== Private Fields =====
     private PlayerController _localPlayerController;
     private NetworkRunner _runner;
+    private bool _startedGame = false;
 
     // ===== Unity Methods =====
 
@@ -51,11 +52,13 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 
     async void StartGameAsync(GameMode mode)
     {
-        if (_runner == null) {
-            // Create the Fusion runner and let it know that we will be providing user input
-            _runner = gameObject.AddComponent<NetworkRunner>();
-            _runner.ProvideInput = true;   
-        }
+        if (_startedGame) return;
+
+        _startedGame = true;
+        
+        // Create the Fusion runner and let it know that we will be providing user input
+        _runner = gameObject.AddComponent<NetworkRunner>();
+        _runner.ProvideInput = true;
 
         var runnerSimulatePhysics2D = gameObject.AddComponent<RunnerSimulatePhysics2D>();
         runnerSimulatePhysics2D.ClientPhysicsSimulation = ClientPhysicsSimulation.SimulateAlways;

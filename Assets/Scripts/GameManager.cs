@@ -11,9 +11,12 @@ public class GameManager : NetworkBehaviour
     // ===== Networked Variables =====
     [Networked] private TickTimer RoundTimer { get; set; }
     [Networked] private bool RoundStarted { get; set; }
+    [Networked] public int CurrentRound { get; private set; }
+    [Networked] public bool IsGameOver { get; private set; }
 
     // ===== Serialized Fields =====
     [SerializeField] private float defaultRoundTime = 120f;
+    [SerializeField] private int maxRounds = 3;
     [SerializeField] private List<Transform> defaultPlayerSpawnPoints = new();
     [SerializeField] private Transform playerCamera;
     [SerializeField] private Transform menuCamera;
@@ -22,6 +25,7 @@ public class GameManager : NetworkBehaviour
     public List<Transform> DefaultPlayerSpawnPoints => defaultPlayerSpawnPoints;
     public Camera CurrentActiveCamera => GetActiveCamera();
     public float RoundDuration => defaultRoundTime;
+    public int MaxRounds => maxRounds;
     public float? RoundTimeRemaining => (Object != null && Object.IsValid) ? RoundTimer.RemainingTime(Runner) : null;
 
     // ===== Private Fields =====
@@ -53,6 +57,16 @@ public class GameManager : NetworkBehaviour
         }
     }
 
+    public override void FixedUpdateNetwork() {
+        if (!HasStateAuthority) return;
+        if (!RoundStarted) return;
+
+        if (RoundTimer.Expired(Runner)) {
+            RoundTimer = TickTimer.None;
+            EndRound();
+        }
+    }
+
     private Camera GetActiveCamera() {
         if (Object != null && Object.IsValid) // To check if Spawned() has been called
             return (RoundStarted ? playerCamera : menuCamera).GetComponent<Camera>();
@@ -77,7 +91,9 @@ public class GameManager : NetworkBehaviour
 
     public void StartRound() {
         if (!HasStateAuthority) return;
+        if (IsGameOver) return;
         
+        CurrentRound++;
         RoundStarted = true;
         UpdateActiveCamera();
         ResetTimer();
@@ -89,8 +105,44 @@ public class GameManager : NetworkBehaviour
         RoundTimer = TickTimer.CreateFromSeconds(Runner, defaultRoundTime);
     }
 
+    private void EndRound() {
+        if (!HasStateAuthority) return;
+
+        RoundStarted = false;
+        RoundTimer = TickTimer.None;
+        FreezePlayers();
+
+        if (CurrentRound >= maxRounds) {
+            IsGameOver = true;
+        }
+
+        Debug.Log($"[GameManager] Round {CurrentRound} ended. Game over: {IsGameOver}");
+    }
+
+    private void FreezePlayers() {
+        foreach ((PlayerRef playerRef, NetworkObject _) in NetworkManager.Instance.SpawnedCharacters) {
+            PlayerManager.Instance.DisablePlayer(playerRef);
+        }
+    }
+
     private void ResetPlayers() {
         _playerSpawnIdxMapping = new(); // Release previous mapping
+
+        // Reset health for all players
+        foreach ((PlayerRef playerRef, NetworkObject networkObject) in NetworkManager.Instance.SpawnedCharacters) {
+            PlayerStats stats = networkObject.GetComponent<PlayerStats>();
+            if (stats != null)
+            {
+                stats.CurrentHealth = stats.MaxHealth;
+            }
+
+            PlayerCombat combat = networkObject.GetComponent<PlayerCombat>();
+            if (combat != null && combat.IsDead)
+            {
+                // Force-clear dead state so round start works cleanly
+                combat.ForceResetDeathState();
+            }
+        }
     }
 
     private void SpawnPlayers() {
@@ -116,5 +168,15 @@ public class GameManager : NetworkBehaviour
     
     private void ActivatePlayer(PlayerRef player) {
         PlayerManager.Instance.EnablePlayer(player);
+    }
+
+    public Vector3 GetPlayerSpawnPoint(PlayerRef player) {
+        if (_playerSpawnIdxMapping.TryGetValue(player, out int spawnIdx))
+        {
+            return DefaultPlayerSpawnPoints[spawnIdx].position;
+        }
+
+        Debug.LogWarning($"[GameManager] No spawn point mapping found for player {player.PlayerId}. Using default.");
+        return DefaultPlayerSpawnPoints[0].position;
     }
 }

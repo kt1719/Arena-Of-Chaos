@@ -14,6 +14,9 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Color roundTimerStartColor = Color.green;
     [SerializeField] private Color roundTimerEndColor = Color.red;
 
+    [Header("Round Info")]
+    [SerializeField] private TextMeshProUGUI roundCounterText;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -27,11 +30,24 @@ public class UIManager : MonoBehaviour
     private void Update()
     {
         UpdateRoundTimer();
+        UpdateRoundCounter();
     }
 
     private void UpdateRoundTimer()
     {
         if (GameManager.Instance == null) return;
+
+        // Game Over state
+        if (GameManager.Instance.IsGameOver)
+        {
+            if (roundTimerText != null)
+                roundTimerText.text = "Game Over";
+
+            if (roundTimerBackground != null)
+                roundTimerBackground.color = roundTimerEndColor;
+
+            return;
+        }
 
         float? remaining = GameManager.Instance.RoundTimeRemaining;
         float totalDuration = GameManager.Instance.RoundDuration;
@@ -62,5 +78,19 @@ public class UIManager : MonoBehaviour
             if (roundTimerBackground != null)
                 roundTimerBackground.color = roundTimerEndColor;
         }
+    }
+
+    private void UpdateRoundCounter()
+    {
+        if (GameManager.Instance == null) return;
+        if (roundCounterText == null) return;
+
+        int current = GameManager.Instance.CurrentRound;
+        int max = GameManager.Instance.MaxRounds;
+
+        if (current > 0)
+            roundCounterText.text = $"Round {current}/{max}";
+        else
+            roundCounterText.text = "";
     }
 }
