@@ -74,3 +74,40 @@ Zero compile errors confirmed via diagnostics.
 **Context**: CONSTRUCTION - Code Generation Part 2 Complete
 
 ---
+
+## Code Generation — User Feedback & Iteration
+**Timestamp**: 2026-05-03T10:40:00Z
+**User Input**: "When a round ends the players disappear and the camera stops following them. I just want the movement to stop moving, I want the players to remain there but to not be moveable. The camera should not change either"
+**AI Response**: Added FreezePlayer() method to PlayerController and PlayerManager, updated GameManager.FreezePlayers() to use it, stopped camera switching between rounds. Root cause: ChangePlayerEnable bug fix now correctly hid visuals on DisablePlayer(), and EndRound() set RoundStarted=false triggering camera swap.
+**Context**: CONSTRUCTION - Code Generation, iteration 1
+
+---
+
+**Timestamp**: 2026-05-03T10:42:00Z
+**User Input**: "Still disappearing"
+**AI Response**: Root cause was Render() ChangeDetector watching PlayerEnabled — when FreezePlayer() set it to false, the detector called ChangePlayerEnable(false) which hid visuals. Fix: split into two networked properties (PlayerEnabled for input, PlayerVisible for visuals). FreezePlayer() only touches PlayerEnabled.
+**Context**: CONSTRUCTION - Code Generation, iteration 2
+
+---
+
+**Timestamp**: 2026-05-03T10:45:00Z
+**User Input**: "Actually you know what I prefer the before where it disables player visuals, although i prefer the camera not moving from now."
+**AI Response**: Reverted to single PlayerEnabled property, removed FreezePlayer/PlayerVisible. Render() change detector now directly sets visuals from PlayerEnabled. FreezePlayers() back to using DisablePlayer(). Camera fix retained: EndRound() only sets RoundStarted=false on game over.
+**Context**: CONSTRUCTION - Code Generation, iteration 3
+
+---
+
+**Timestamp**: 2026-05-03T10:48:00Z
+**User Input**: "It works now."
+**AI Response**: Code generation confirmed working. Proceeding to Build & Test.
+**Context**: CONSTRUCTION - Code Generation approved via user confirmation.
+
+---
+
+## Build and Test — Skipped (User Tested)
+**Timestamp**: 2026-05-03T10:55:00Z
+**User Input**: "Already tested and built we can cleanup"
+**AI Response**: User confirmed manual testing and build. Skipping Build & Test instruction generation. Marking workflow complete.
+**Context**: CONSTRUCTION - Build and Test skipped by user confirmation. Workflow complete.
+
+---
