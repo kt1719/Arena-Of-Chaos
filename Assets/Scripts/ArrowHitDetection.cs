@@ -3,7 +3,7 @@ using Fusion;
 using UnityEngine;
 
 /// <summary>
-/// All server-side arrow hit detection: lag-compensated entity hits,
+/// All server-side arrow hit detection: lag-compensated entity overlap,
 /// lag-compensated environment raycasts, and destructible pass-through.
 /// Plain C# — not a MonoBehaviour.
 /// </summary>
@@ -32,14 +32,19 @@ public class ArrowHitDetection
     }
 
     // ════════════════════════════════════════
-    //  Entity Hits (multi-sample swept lag-comp)
+    //  Entity Hits (multi-sample swept lag-compensated overlap)
     // ════════════════════════════════════════
 
     /// <summary>
-    /// Multi-sample swept lag-compensated overlap between the arrow's previous and
-    /// current tick positions. Samples are spaced so consecutive overlap spheres
-    /// always overlap, eliminating the discretisation gap that lets fast targets
-    /// slip between per-tick checks.
+    /// Multi-sample swept lag-compensated overlap between the arrow's previous
+    /// and current tick positions. Each sample's hitbox query is rewound to
+    /// the shooter's view of the target, so what the shooter sees is what the
+    /// hit registers against — predictions on the shooter side stay aligned
+    /// with authoritative outcomes.
+    ///
+    /// Samples are spaced so consecutive overlap circles always overlap,
+    /// eliminating the discretisation gap that lets fast targets slip between
+    /// per-tick checks.
     /// </summary>
     /// <returns>True if an entity was hit and the arrow should be consumed.</returns>
     public bool DetectEntityHit(
@@ -47,10 +52,7 @@ public class ArrowHitDetection
         int bufferIndex, NetworkArray<ArrowData> buffer, int damage,
         Vector2 direction, float knockbackForce, float knockbackDuration)
     {
-        _lagCompHits.Clear();
         _hitDedupe.Clear();
-
-        const HitOptions hitOptions = HitOptions.SubtickAccuracy | HitOptions.IgnoreInputAuthority;
 
         Vector2 delta = currPosition - prevPosition;
         float distance = delta.magnitude;
@@ -58,56 +60,62 @@ public class ArrowHitDetection
         if (distance < MIN_SWEEP_DISTANCE)
         {
             // Fire-tick edge case: arrow hasn't moved yet. Single overlap at current position.
-            _runner.LagCompensation.OverlapSphere(
-                currPosition, _hitRadius, _owner, _lagCompHits, options: hitOptions);
-        }
-        else
-        {
-            // Multi-sample sweep: number of samples so consecutive spheres always overlap.
-            // distance / radius + 1 guarantees overlap even when distance > radius.
-            int sampleCount = Mathf.CeilToInt(distance / _hitRadius) + 1;
-
-            for (int i = 0; i <= sampleCount; i++)
-            {
-                float t = (float)i / sampleCount;
-                Vector2 samplePos = Vector2.Lerp(prevPosition, currPosition, t);
-
-                // Each call appends to _lagCompHits; we dedupe below.
-                _runner.LagCompensation.OverlapSphere(
-                    samplePos, _hitRadius, _owner, _lagCompHits, options: hitOptions);
-
-                // Early exit: if we already have at least one valid hit, stop sampling.
-                // The first valid hit closest to the start of the sweep is the correct one.
-                if (HasValidHit()) break;
-            }
+            return TrySamplePosition(
+                ref data, currPosition, bufferIndex, buffer,
+                damage, direction, knockbackForce, knockbackDuration);
         }
 
-        // Resolve against the first valid hit found.
-        foreach (var hit in _lagCompHits)
+        // Multi-sample sweep: number of samples so consecutive circles always overlap.
+        // distance / radius + 1 guarantees overlap even when distance > radius.
+        int sampleCount = Mathf.CeilToInt(distance / _hitRadius) + 1;
+
+        for (int i = 0; i <= sampleCount; i++)
         {
-            if (!TryGetHittable(hit, out IHittable hittable, out NetworkId hitId)) continue;
-            if (!_hitDedupe.Add(hitId)) continue; // skip duplicates from overlapping samples
+            float t = (float)i / sampleCount;
+            Vector2 samplePos = Vector2.Lerp(prevPosition, currPosition, t);
 
-            if (_runner.IsForward)
-                hittable.ApplyHit(damage, direction, knockbackForce, knockbackDuration, _owner);
-
-            ResolveArrow(ref data, currPosition, bufferIndex, buffer);
-            return true;
+            // First valid hit closest to the start of the sweep wins.
+            if (TrySamplePosition(
+                    ref data, samplePos, bufferIndex, buffer,
+                    damage, direction, knockbackForce, knockbackDuration))
+                return true;
         }
 
         return false;
     }
 
     /// <summary>
-    /// Quick check used during sampling to early-exit as soon as a valid target appears.
+    /// Runs one lag-compensated overlap at <paramref name="samplePos"/> and
+    /// resolves the arrow against the first eligible hittable target found.
+    /// IgnoreInputAuthority handles owner filtering at the Fusion level;
+    /// SubtickAccuracy interpolates rewound hitbox positions between history
+    /// frames for fast-moving targets.
     /// </summary>
-    private bool HasValidHit()
+    private bool TrySamplePosition(
+        ref ArrowData data, Vector2 samplePos, int bufferIndex,
+        NetworkArray<ArrowData> buffer, int damage,
+        Vector2 direction, float knockbackForce, float knockbackDuration)
     {
-        for (int i = 0; i < _lagCompHits.Count; i++)
+        const HitOptions hitOptions = HitOptions.SubtickAccuracy | HitOptions.IgnoreInputAuthority;
+
+        _lagCompHits.Clear();
+        _runner.LagCompensation.OverlapSphere(
+            samplePos, _hitRadius, _owner, _lagCompHits, options: hitOptions);
+
+        foreach (var hit in _lagCompHits)
         {
-            if (TryGetHittable(_lagCompHits[i], out _, out _))
-                return true;
+            if (!TryGetHittable(hit, out IHittable hittable, out NetworkId hitId)) continue;
+
+            // Dedupe across overlapping sweep samples.
+            if (!_hitDedupe.Add(hitId)) continue;
+
+            if (_runner.IsForward)
+                hittable.ApplyHit(damage, direction, knockbackForce, knockbackDuration, _owner);
+
+            ResolveArrow(ref data, samplePos, bufferIndex, buffer);
+            return true;
         }
+
         return false;
     }
 
@@ -194,7 +202,7 @@ public class ArrowHitDetection
     /// IgnoreInputAuthority handles owner filtering at the Fusion level — this is a
     /// final safety check plus IHittable extraction.
     /// </summary>
-    private bool TryGetHittable(LagCompensatedHit hit, out IHittable hittable, out NetworkId id)
+    private static bool TryGetHittable(LagCompensatedHit hit, out IHittable hittable, out NetworkId id)
     {
         hittable = null;
         id = default;
@@ -212,8 +220,8 @@ public class ArrowHitDetection
     }
 
     /// <summary>
-    /// Marks an arrow as resolved (hit) and writes it back to the networked buffer.
-    /// Centralises the three-field write that was previously duplicated per hit type.
+    /// Marks an arrow as resolved (hit) and writes it back to the networked
+    /// buffer at <paramref name="bufferIndex"/>. Server-authority only.
     /// </summary>
     private void ResolveArrow(
         ref ArrowData data, Vector2 hitPos, int bufferIndex,
