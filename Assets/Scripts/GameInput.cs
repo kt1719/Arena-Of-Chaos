@@ -9,6 +9,8 @@ public class GameInput : MonoBehaviour
     public event Action OnPlayerAttack;
     public event Action OnPlayerCancelAttack;
     public event Action OnPlayerDash;
+    public event Action OnScoreboardPressed;
+    public event Action OnScoreboardReleased;
     public event Action<OnPlayerInventoryArgs> OnPlayerInventory;
 
     public class OnPlayerInventoryArgs : EventArgs
@@ -43,6 +45,8 @@ public class GameInput : MonoBehaviour
         playerInputActions.Player.Attack.performed += Attack_Performed;
         playerInputActions.Player.Attack.canceled += Attack_Released;
         playerInputActions.Player.Dash.performed += Dash_Performed;
+        playerInputActions.Player.Scoreboard.performed += Scoreboard_Performed;
+        playerInputActions.Player.Scoreboard.canceled += Scoreboard_Released;
 
         playerInputActions.Inventory.Slot1.performed += ctx => Inventory_Performed(ctx, 0);
         playerInputActions.Inventory.Slot2.performed += ctx => Inventory_Performed(ctx, 1);
@@ -71,6 +75,16 @@ public class GameInput : MonoBehaviour
     private void Attack_Released(InputAction.CallbackContext context)
     {
         OnPlayerCancelAttack?.Invoke();
+    }
+
+    private void Scoreboard_Performed(InputAction.CallbackContext context)
+    {
+        OnScoreboardPressed?.Invoke();
+    }
+
+    private void Scoreboard_Released(InputAction.CallbackContext context)
+    {
+        OnScoreboardReleased?.Invoke();
     }
 
     private void OnDestroy()

@@ -16,7 +16,7 @@ MonoBehaviour:
   weaponCooldown: 0.5
   weaponAttackDuration: 0.36
   attackSpeed: 1
-  weaponDamage: 1
+  weaponDamage: 30
   weaponRange: 12
   knockbackForce: 10
   knockbackDuration: 0.2

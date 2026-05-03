@@ -99,6 +99,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 
             NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, spawnRotation, player);
             SpawnedCharacters.Add(player, networkPlayerObject);
+            runner.SetPlayerObject(player, networkPlayerObject);
             
             OnPlayerJoinedNetworkManager?.Invoke(networkPlayerObject);
         }

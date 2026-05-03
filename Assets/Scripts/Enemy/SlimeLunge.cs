@@ -117,7 +117,7 @@ public class SlimeLunge : NetworkBehaviour
             IHittable hittable = hit.GetComponent<IHittable>();
             if (hittable == null) continue;
 
-            hittable.ApplyHit(_damage, _dashDirection, _knockbackForce, _knockbackDuration);
+            hittable.ApplyHit(_damage, _dashDirection, _knockbackForce, _knockbackDuration, PlayerRef.None);
             _hasHitThisLunge = true;
             return;
         }

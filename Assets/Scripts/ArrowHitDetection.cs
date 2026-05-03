@@ -89,7 +89,7 @@ public class ArrowHitDetection
             if (!_hitDedupe.Add(hitId)) continue; // skip duplicates from overlapping samples
 
             if (_runner.IsForward)
-                hittable.ApplyHit(damage, direction, knockbackForce, knockbackDuration);
+                hittable.ApplyHit(damage, direction, knockbackForce, knockbackDuration, _owner);
 
             ResolveArrow(ref data, currPosition, bufferIndex, buffer);
             return true;

@@ -1,5 +1,4 @@
 using Fusion;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerController : NetworkBehaviour
@@ -45,7 +44,7 @@ public class PlayerController : NetworkBehaviour
         foreach (var change in _changeDetector.DetectChanges(this))
         {
             if (change == nameof(PlayerEnabled))
-                ChangePlayerEnable(PlayerEnabled);
+                playerVisuals.gameObject.SetActive(PlayerEnabled);
         }
     }
 
@@ -79,9 +78,7 @@ public class PlayerController : NetworkBehaviour
     }
 
     public void ChangePlayerEnable(bool active) {
-        
         PlayerEnabled = active;
-        playerVisuals.gameObject.SetActive(true);
     }
 }
 

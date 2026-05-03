@@ -17,6 +17,9 @@ public class UIManager : MonoBehaviour
     [Header("Round Info")]
     [SerializeField] private TextMeshProUGUI roundCounterText;
 
+    [Header("Scoreboard")]
+    [SerializeField] private ScoreboardUI scoreboardUI;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)

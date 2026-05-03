@@ -18,6 +18,7 @@ public class SlimeCombat : NetworkBehaviour, IHittable
 
     // ===== Change Detection =====
     private ChangeDetector _changeDetector;
+    private PlayerRef _lastAttacker;
 
     // ===== Lifecycle =====
 
@@ -48,9 +49,10 @@ public class SlimeCombat : NetworkBehaviour, IHittable
 
     // ===== Public API =====
 
-    public void ApplyHit(int damage, Vector2 hitDirection, float knockbackForce, float knockbackDuration) {
+    public void ApplyHit(int damage, Vector2 hitDirection, float knockbackForce, float knockbackDuration, PlayerRef attacker) {
         if (!HasStateAuthority) return;
 
+        _lastAttacker = attacker;
         CurrentHealth = Mathf.Max(0, CurrentHealth - damage);
 
         RPC_TriggerHitFlash();
@@ -65,6 +67,11 @@ public class SlimeCombat : NetworkBehaviour, IHittable
     }
 
     private void Die() {
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.AddSlimeKill(_lastAttacker);
+        }
+
         Runner.Despawn(Object);
     }
 

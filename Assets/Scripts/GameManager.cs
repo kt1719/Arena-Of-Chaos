@@ -108,12 +108,12 @@ public class GameManager : NetworkBehaviour
     private void EndRound() {
         if (!HasStateAuthority) return;
 
-        RoundStarted = false;
         RoundTimer = TickTimer.None;
         FreezePlayers();
 
         if (CurrentRound >= maxRounds) {
             IsGameOver = true;
+            RoundStarted = false; // Only switch camera when game is fully over
         }
 
         Debug.Log($"[GameManager] Round {CurrentRound} ended. Game over: {IsGameOver}");

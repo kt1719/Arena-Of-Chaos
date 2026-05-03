@@ -84,7 +84,7 @@ public class SwordWeapon : BaseWeapon
         if (hittable == null) return;
 
         _hitCache.Add(targetNetObj.Id);
-        hittable.ApplyHit(weaponInfo.weaponDamage, hitDirection, weaponInfo.knockbackForce, weaponInfo.knockbackDuration);
+        hittable.ApplyHit(weaponInfo.weaponDamage, hitDirection, weaponInfo.knockbackForce, weaponInfo.knockbackDuration, Object.InputAuthority);
     }
 
     private void PurgeHitCache()

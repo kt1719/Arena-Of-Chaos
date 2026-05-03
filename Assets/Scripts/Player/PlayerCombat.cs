@@ -8,6 +8,7 @@ public class PlayerCombat : NetworkBehaviour, IHittable
     [Networked] private BaseWeapon CurrentWeapon { get; set; }
     [Networked] public NetworkBool IsDead { get; private set; }
     [Networked] private TickTimer RespawnTimer { get; set; }
+    [Networked] private TickTimer InvincibilityTimer { get; set; }
 
     // ===== Serialized Fields =====
     [SerializeField] private WeaponInfo _testWeapon;
@@ -15,11 +16,14 @@ public class PlayerCombat : NetworkBehaviour, IHittable
     [SerializeField] private PlayerVisual _playerVisual;
     [SerializeField] private Knockback _playerKnockback;
     [SerializeField] private PlayerMovement _playerMovement;
+    [SerializeField] private Collider2D _hurtBoxCollider;
     [SerializeField] private float _respawnDelay = 3f;
+    [SerializeField] private float _invincibilityDuration = 1.5f;
 
     // ===== Private Variables =====
     private PlayerStats _stats;
     private Collider2D _collider;
+    private PlayerRef _lastAttacker;
 
     public override void Spawned() {
         _stats = GetComponent<PlayerStats>();
@@ -89,11 +93,13 @@ public class PlayerCombat : NetworkBehaviour, IHittable
         }
     }
 
-    public void ApplyHit(int damage, Vector2 hitDirection, float knockbackForce, float knockbackDuration) {
+    public void ApplyHit(int damage, Vector2 hitDirection, float knockbackForce, float knockbackDuration, PlayerRef attacker) {
         if (!HasStateAuthority) return;
         if (IsDead) return;
         if (_playerMovement.IsDashing) return;
+        if (!InvincibilityTimer.ExpiredOrNotRunning(Runner)) return;
 
+        _lastAttacker = attacker;
         _stats.CurrentHealth = Mathf.Max(0, _stats.CurrentHealth - damage);
 
         RPC_TriggerHitFlash();
@@ -124,7 +130,15 @@ public class PlayerCombat : NetworkBehaviour, IHittable
         IsDead = true;
         RespawnTimer = TickTimer.CreateFromSeconds(Runner, _respawnDelay);
 
+        // Report kill and death to ScoreManager
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.AddPlayerKill(_lastAttacker);
+            ScoreManager.Instance.AddDeath(Object.InputAuthority);
+        }
+
         if (_collider != null) _collider.enabled = false;
+        if (_hurtBoxCollider != null) _hurtBoxCollider.enabled = false;
         PlayerManager.Instance.DisablePlayer(Object.InputAuthority);
     }
 
@@ -135,10 +149,12 @@ public class PlayerCombat : NetworkBehaviour, IHittable
 
         _stats.CurrentHealth = _stats.MaxHealth;
         if (_collider != null) _collider.enabled = true;
+        if (_hurtBoxCollider != null) _hurtBoxCollider.enabled = true;
 
         Vector3 spawnPosition = GameManager.Instance.GetPlayerSpawnPoint(Object.InputAuthority);
         transform.position = spawnPosition;
 
+        InvincibilityTimer = TickTimer.CreateFromSeconds(Runner, _invincibilityDuration);
         PlayerManager.Instance.EnablePlayer(Object.InputAuthority);
     }
 
@@ -150,7 +166,9 @@ public class PlayerCombat : NetworkBehaviour, IHittable
 
         IsDead = false;
         RespawnTimer = default;
+        InvincibilityTimer = default;
         if (_collider != null) _collider.enabled = true;
+        if (_hurtBoxCollider != null) _hurtBoxCollider.enabled = true;
     }
 
     private void UpdatePlayerFacingDirection(Vector2 weaponAimDirection)
