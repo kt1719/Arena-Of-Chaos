@@ -3,18 +3,41 @@ using Fusion;
 using UnityEngine;
 
 /// <summary>
-/// Manages the visual (render-side) lifecycle of arrows:
-/// pooling, spawning, position interpolation, trail timing,
-/// and client-side hit prediction (shooter only).
+/// Manages the visual (render-side) lifecycle of arrows: pooling, spawning,
+/// deterministic-flight rendering with barrel-interpolation catchup, trail
+/// timing, and client-side hit prediction (shooter only).
+///
+/// Visual rendering uses <see cref="NetworkRunner.LocalRenderTime"/> on every
+/// observer so in-flight arrow positions converge across screens. The catchup
+/// lerp absorbs the snapshot delay on proxies so arrows still appear to leave
+/// the bow tip rather than spawning mid-trajectory.
+///
 /// Plain C# — not a MonoBehaviour.
 /// </summary>
 public class ArrowVisualManager
 {
     /// <summary>
-    /// Delay before trail emission starts — gives resimulation corrections
-    /// time to settle so the trail doesn't record a snap artifact.
+    /// Delay before trail emission starts. Two purposes:
+    ///   1. Gives resimulation corrections time to settle so the trail doesn't
+    ///      record a snap artifact.
+    ///   2. Hides the accelerated catchup segment from the trail (which moves
+    ///      faster than <c>_arrowSpeed</c> on proxies during the first
+    ///      <see cref="CATCHUP_DURATION"/>).
+    /// Kept equal to <see cref="CATCHUP_DURATION"/> so trail emission begins
+    /// exactly when the visual is back on the deterministic flight line.
     /// </summary>
     private const float TRAIL_START_DELAY = 0.1f;
+
+    /// <summary>
+    /// Duration of the barrel-interpolation lerp from
+    /// <see cref="ArrowVisual.SnapshotPosition"/> (the bow tip) to the
+    /// deterministic trajectory point at <see cref="NetworkRunner.LocalRenderTime"/>.
+    /// On the shooter and host this is effectively a no-op (first-render
+    /// elapsed ≈ 0). On proxies the lerp absorbs the snapshot delay so the
+    /// arrow visually leaves the bow tip rather than popping in mid-flight.
+    /// Visual-only — does not affect prediction or hit detection.
+    /// </summary>
+    private const float CATCHUP_DURATION = 0.1f;
 
     // ── Config (set once via Init) ──
     private int _bufferCapacity;
@@ -141,7 +164,13 @@ public class ArrowVisualManager
 
     private void SpawnVisualForSlot(int index, ArrowData data)
     {
-        if (_prefab == null || !data.IsActive) return;
+        if (_prefab == null) return;
+
+        // Spawn for any real fire (FireTick > 0). Don't gate on IsActive —
+        // a proxy may first observe a slot already in finished state for a
+        // very-close-range hit; the visual still needs to fly its short arc
+        // up to FinishTick on this peer's timeline before VFX plays.
+        if (data.FireTick == 0) return;
 
         ArrowVisual visual = Rent(data.FirePosition);
         visual.Init(index, data.FireTick, data.FireDirection, data.FirePosition);
@@ -154,20 +183,17 @@ public class ArrowVisualManager
     // ════════════════════════════════════════
 
     /// <summary>
-    /// Drives every active visual: recycles stale ones, finalises hits/expires,
-    /// interpolates position, and runs client-side hit prediction (shooter only).
+    /// Per-frame driver for every active visual. For each slot:
+    ///   1. Recycle if the buffer slot has been reused by a newer arrow.
+    ///   2. Advance the visual along its deterministic flight (with catchup).
+    ///   3. Finalise (server-confirmed hit) or expire if the local render
+    ///      timeline has reached the finish tick.
+    ///   4. Run shooter-side hit prediction.
     /// </summary>
     public void UpdateVisuals(NetworkArray<ArrowData> buffer)
     {
         bool isOwner = _networkObject != null && _networkObject.HasInputAuthority;
-
-        // Per Fusion docs: proxies render on the remote (interpolated) timeline,
-        // matching the timeline the snapshot data lives on. Local/state authority
-        // render on the local timeline. Mixing these causes the arrow to pop forward
-        // along its trajectory on proxy clients.
-        float renderTime = _networkObject.IsProxy
-            ? _runner.RemoteRenderTime
-            : _runner.LocalRenderTime;
+        float renderTime = _runner.LocalRenderTime;
 
         for (int i = 0; i < _bufferCapacity; i++)
         {
@@ -177,16 +203,21 @@ public class ArrowVisualManager
             var data = buffer[i];
 
             if (TryRecycleStale(i, visual, data)) continue;
-            if (TryFinalise(i, visual, data)) continue;
-            if (TryExpire(i, visual, data)) continue;
 
+            // Advance position *before* finish/expire gates so the arrow keeps
+            // moving up to the finish moment on this peer's render timeline
+            // instead of snapping to HitPosition the instant the buffer flips
+            // IsFinished.
             float elapsed = renderTime - data.FireTick * _runner.DeltaTime;
-            if (!TryUpdatePosition(visual, elapsed, out Vector2 prevPos, out Vector2 newPos))
+            if (!TryUpdatePosition(visual, elapsed, renderTime, out Vector2 prevPos, out Vector2 newPos))
                 continue;
+
+            if (TryFinalise(i, visual, data, renderTime)) continue;
+            if (TryExpire(i, visual, data, renderTime)) continue;
 
             // Only the shooter runs prediction. Proxies rely on the server-confirmed
             // hit path (TryFinalise) — predicting on a proxy compares mismatched
-            // timelines and produced wrong results often enough to be net-negative.
+            // timelines and produces wrong results often enough to be net-negative.
             if (isOwner)
                 RunShooterPrediction(visual, prevPos, newPos);
         }
@@ -202,10 +233,18 @@ public class ArrowVisualManager
         return true;
     }
 
-    /// <summary>Handles a server-confirmed hit: plays VFX and recycles.</summary>
-    private bool TryFinalise(int index, ArrowVisual visual, ArrowData data)
+    /// <summary>
+    /// Handles a server-confirmed hit: plays VFX and recycles. Gated on
+    /// <see cref="HasReachedFinishTick"/> so the visual continues flying
+    /// along its deterministic path until this peer's render timeline
+    /// catches up to the finish moment — otherwise the buffer flipping
+    /// <see cref="ArrowData.IsFinished"/> would snap the arrow to
+    /// <see cref="ArrowData.HitPosition"/> mid-flight.
+    /// </summary>
+    private bool TryFinalise(int index, ArrowVisual visual, ArrowData data, float renderTime)
     {
         if (!data.IsFinished) return false;
+        if (!HasReachedFinishTick(data, renderTime)) return false;
 
         if (!visual.IsPredictedHit)
         {
@@ -220,24 +259,53 @@ public class ArrowVisualManager
         return true;
     }
 
-    /// <summary>Handles an arrow that expired without hitting anything.</summary>
-    private bool TryExpire(int index, ArrowVisual visual, ArrowData data)
+    /// <summary>
+    /// Handles an arrow that expired without hitting anything. Same finish-tick
+    /// gating as <see cref="TryFinalise"/> — <c>ArrowSimulation</c> writes a
+    /// <see cref="ArrowData.FinishTick"/> on expiry too, so we wait for the
+    /// local timeline to reach it before recycling.
+    /// </summary>
+    private bool TryExpire(int index, ArrowVisual visual, ArrowData data, float renderTime)
     {
         if (data.IsActive) return false;
+        if (!HasReachedFinishTick(data, renderTime)) return false;
+
         RecycleSlot(index);
         return true;
     }
 
     /// <summary>
-    /// Computes the deterministic render position and applies it to the visual.
+    /// True once this peer's render timeline reaches the server-stamped
+    /// <see cref="ArrowData.FinishTick"/>. A <c>FinishTick</c> of 0 (defaulted,
+    /// never set) is treated as "already reached" so callers don't need to
+    /// special-case unset values.
+    /// </summary>
+    private bool HasReachedFinishTick(ArrowData data, float renderTime)
+    {
+        if (data.FinishTick <= 0) return true;
+        return renderTime >= data.FinishTick * _runner.DeltaTime;
+    }
+
+    /// <summary>
+    /// Advances the arrow this frame. Two parallel position computations:
+    ///
+    /// 1. <b>Deterministic</b> — produces the previous-frame and current-frame
+    ///    positions on the arrow's true flight path. Returned via the out
+    ///    params so prediction can sweep against the same trajectory the
+    ///    server's hit query advances along. Same on every observer.
+    ///
+    /// 2. <b>Visual</b> — barrel-interpolated lerp from <see cref="ArrowVisual.SnapshotPosition"/>
+    ///    toward the current deterministic position over <see cref="CATCHUP_DURATION"/>.
+    ///    Render-side smoothing only; never feeds the prediction sweep.
+    ///
     /// Returns false if the arrow shouldn't be visible yet (negative elapsed).
     /// </summary>
     private bool TryUpdatePosition(
-        ArrowVisual visual, float elapsed,
-        out Vector2 prevPos, out Vector2 newPos)
+        ArrowVisual visual, float elapsed, float renderTime,
+        out Vector2 prevDeterministicPos, out Vector2 newDeterministicPos)
     {
-        prevPos = default;
-        newPos = default;
+        prevDeterministicPos = default;
+        newDeterministicPos = default;
 
         // Negative elapsed = render time hasn't caught up to fire tick.
         // Showing the arrow now would pop it ahead of the interpolated weapon barrel.
@@ -247,20 +315,40 @@ public class ArrowVisualManager
             return false;
         }
 
-        // Position from snapshot — immune to resimulation mutations.
-        newPos = visual.SnapshotPosition + visual.SnapshotDirection * (_arrowSpeed * elapsed);
+        // Deterministic sweep range: previous frame's flight position to this
+        // frame's. Time.deltaTime gives the wall-clock gap between frames,
+        // which is also the gap in `elapsed`. Identical math on every peer.
+        float prevElapsed = Mathf.Max(0f, elapsed - Time.deltaTime);
+        prevDeterministicPos =
+            visual.SnapshotPosition + visual.SnapshotDirection * (_arrowSpeed * prevElapsed);
+        newDeterministicPos =
+            visual.SnapshotPosition + visual.SnapshotDirection * (_arrowSpeed * elapsed);
+
+        // Barrel interpolation (visual only): lock first-render time, then
+        // lerp from FirePos toward the current deterministic position over
+        // CATCHUP_DURATION. On the shooter and host this is a near-no-op
+        // (first-render elapsed ≈ 0). On proxies it absorbs the snapshot
+        // delay so the arrow leaves the bow tip cleanly. The visual position
+        // does NOT feed prediction — that uses the deterministic positions
+        // above.
+        visual.MarkFirstRender(renderTime);
+        float catchupElapsed = Mathf.Max(0f, renderTime - visual.FirstRenderTime);
+
+        Vector2 visualPos = catchupElapsed < CATCHUP_DURATION
+            ? Vector2.Lerp(visual.SnapshotPosition, newDeterministicPos, catchupElapsed / CATCHUP_DURATION)
+            : newDeterministicPos;
 
         if (!visual.gameObject.activeSelf)
         {
-            visual.SetPosition((Vector3)newPos);
+            visual.SetPosition((Vector3)visualPos);
             visual.ClearTrail();
             visual.gameObject.SetActive(true);
         }
 
-        prevPos = visual.transform.position;
-        visual.SetPosition((Vector3)newPos);
+        visual.SetPosition((Vector3)visualPos);
 
-        if (elapsed >= TRAIL_START_DELAY)
+        // Trail starts after catchup so it doesn't record the accelerated segment.
+        if (catchupElapsed >= TRAIL_START_DELAY)
             visual.SetTrailEmitting(true);
 
         return true;
@@ -288,19 +376,19 @@ public class ArrowVisualManager
     }
 
     /// <summary>
-    /// Multi-sample swept overlap check matching the server's lag-compensated
-    /// authority sampling. Same sample count as ArrowHitDetection.DetectEntityHit
-    /// so prediction agrees with authority.
+    /// Multi-sample swept overlap check mirroring the sample count used by
+    /// <see cref="ArrowHitDetection.DetectEntityHit"/>, so shooter-side
+    /// prediction agrees with the server's authoritative result.
     /// </summary>
     private void PredictLocalHit(ArrowVisual visual, Vector2 prevPos, Vector2 currPos)
     {
         Vector2 delta = currPos - prevPos;
         float distance = delta.magnitude;
 
+        // Stationary edge case (fire-tick frame): single overlap at current position.
         if (distance < 0.0001f)
         {
-            // Single overlap at current position.
-            if (TryPredictAtPosition(visual, currPos)) return;
+            TryPredictAtPosition(visual, currPos);
             return;
         }
 
@@ -319,6 +407,12 @@ public class ArrowVisualManager
     /// <summary>
     /// Single-sample overlap check used by the multi-sample predictor.
     /// Returns true if a predicted hit was triggered at this position.
+    ///
+    /// With lag-comp on the server, the authoritative hit query rewinds
+    /// targets to the shooter's view — which closely matches the proxy
+    /// Rigidbody positions Physics2D sees on this machine. No extrapolation
+    /// needed; the extra forward shift would actually push prediction past
+    /// the rewound position the server uses.
     /// </summary>
     private bool TryPredictAtPosition(ArrowVisual visual, Vector2 samplePos)
     {

@@ -17,6 +17,10 @@ public class ArrowVisual : MonoBehaviour
     public Vector2 SnapshotPosition { get; private set; }
     public Vector2 SnapshotDirection { get; private set; }
 
+    // ── Catchup (barrel interpolation) ──
+    public bool HasFirstRendered { get; private set; }
+    public float FirstRenderTime { get; private set; }
+
     // ── Prediction State ──
     public bool IsPredictedHit { get; private set; }
     public bool PredictionTimerExpired => _predictionTimer <= 0f;
@@ -69,6 +73,19 @@ public class ArrowVisual : MonoBehaviour
     // ════════════════════════════════════════
 
     public void SetPosition(Vector3 worldPos) => transform.position = worldPos;
+
+    /// <summary>
+    /// Records the wall-clock-equivalent render time at which this visual
+    /// first became visible on this peer. Used by the manager's barrel
+    /// interpolation to know how long to lerp from <see cref="SnapshotPosition"/>
+    /// toward the deterministic trajectory.
+    /// </summary>
+    public void MarkFirstRender(float renderTime)
+    {
+        if (HasFirstRendered) return;
+        HasFirstRendered = true;
+        FirstRenderTime = renderTime;
+    }
 
     public void ClearTrail()
     {
@@ -147,6 +164,8 @@ public class ArrowVisual : MonoBehaviour
     private void ResetVisualState()
     {
         IsPredictedHit = false;
+        HasFirstRendered = false;
+        FirstRenderTime = 0f;
         _vfxPlayed = false;
         _predictionTimer = PREDICTION_TIMEOUT;
 
