@@ -36,6 +36,7 @@ public class UIManager : MonoBehaviour
     private void UpdateRoundTimer()
     {
         if (GameManager.Instance == null) return;
+        if (GameManager.Instance.Object == null || !GameManager.Instance.Object.IsValid) return;
 
         // Game Over state
         if (GameManager.Instance.IsGameOver)
@@ -83,6 +84,7 @@ public class UIManager : MonoBehaviour
     private void UpdateRoundCounter()
     {
         if (GameManager.Instance == null) return;
+        if (GameManager.Instance.Object == null || !GameManager.Instance.Object.IsValid) return;
         if (roundCounterText == null) return;
 
         int current = GameManager.Instance.CurrentRound;
