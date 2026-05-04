@@ -10,7 +10,7 @@ public class GameManager : NetworkBehaviour
     
     // ===== Networked Variables =====
     [Networked] private TickTimer RoundTimer { get; set; }
-    [Networked] private bool RoundStarted { get; set; }
+    [Networked] public bool RoundStarted { get; private set; }
     [Networked] public int CurrentRound { get; private set; }
     [Networked] public bool IsGameOver { get; private set; }
 
@@ -44,6 +44,10 @@ public class GameManager : NetworkBehaviour
         NetworkManager.Instance.OnPlayerJoinedNetworkManager += AddToLobby;
         UpdateActiveCamera();
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+    }
+
+    public override void Despawned(NetworkRunner runner, bool hasState) {
+        if (Instance == this) Instance = null;
     }
 
     public override void Render() {

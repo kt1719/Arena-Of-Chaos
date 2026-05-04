@@ -30,6 +30,11 @@ public class UIManager : MonoBehaviour
         Instance = this;
     }
 
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     private void Update()
     {
         UpdateRoundTimer();

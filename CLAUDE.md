@@ -13,8 +13,8 @@ The full game design is in `docs/game-design/gdd-v1.md`. Read that first when in
 This is a Unity project — there is no command-line build script. All work happens through:
 
 - **Open the project** in Unity Hub at the repo root (the `Assets/`, `Packages/`, `ProjectSettings/` triple).
-- **Main scenes:** `Assets/Scenes/GameScene.unity` (primary gameplay scene) and `Assets/Scenes/RoundTimer.unity`. There is also a sandbox scene at `Assets/Test/Test.unity`.
-- **Multiplayer testing:** the project uses `com.unity.multiplayer.playmode` so you can run multiple Editor instances. Sessions hardcode the Photon room name `"TestRoom"` (see `NetworkManager.StartGameAsync`). Click **Start Host** in one instance, **Start Client** in others.
+- **Scenes:** `Assets/Scenes/GameScene.unity` is the primary play scene (build index 0). `Assets/Scenes/RoundTimer.unity` (build index 1) holds round-timer / scoreboard / inventory UI work. `Assets/Test/Test.unity` (build index 2, disabled) is the sandbox.
+- **Multiplayer testing:** the project uses `com.unity.multiplayer.playmode` so you can run multiple Editor instances. Sessions hardcode the Photon room name `"TestRoom"` (see `NetworkManager.StartGameAsync`). The lobby UI lives on `LobbyCanvas` — click **Host** in one instance, **Client** in others, then the host clicks **StartRound**.
 - **Tests:** `com.unity.test-framework` is installed but no automated tests have been authored yet — `Assets/Test/` contains manual sandbox prefabs/scripts (`BasicSpawner.cs`, `BallTest.cs`, etc.), not unit tests. Run them via `Window → General → Test Runner` if/when tests are added.
 
 ## High-Level Architecture
@@ -31,11 +31,23 @@ Everything that affects gameplay lives on a `NetworkBehaviour`. The pattern used
 
 `NetworkInputData` (in `NetworkInputData.cs`) is the entire per-tick input payload: `movementDirection`, `weaponAimDirection`, and a `NetworkButtons` bitmask with `DASH=0` / `ATTACK=1`. To add a new button, add a `const byte` and set/read it via `buttons.Set/IsSet`.
 
+### Scene & manager layout
+
+`GameScene.unity` is the only play scene. Its root objects, by category:
+
+- **Managers** (all are prefab instances under `Assets/Prefabs/Managers/` or `Assets/Prefabs/Misc/`): `NetworkManager`, `GameManager`, `PlayerManager`, `ScoreManager`, `GameInput`.
+- **UI** (prefab instances under `Assets/Prefabs/UI/`): `LobbyCanvas` (Host/Client/StartRound buttons + `LobbyController`), `UICanvas` (gameplay HUD: round timer, scoreboard, inventory).
+- **Camera** prefab (under `Assets/Prefabs/Camera.prefab`) holds both `MenuCameraContainer` and `PlayerCameraContainer`; `GameManager.UpdateActiveCamera()` toggles between them on the `RoundStarted` networked flag.
+- **Environment**, **EventSystem**, **Global Light 2D**, **A\*** are scene-only.
+
+Any new scene that needs gameplay should drop in the same five manager prefabs + `UICanvas` + `LobbyCanvas` + the `Camera` prefab.
+
 ### Singleton "managers" wired in the scene
 
-These are NOT auto-spawned — they live as objects in the scene and use `public static Instance` references. Anything that calls them assumes they exist:
+These are NOT auto-spawned — they live as objects in the scene and use `public static Instance` references. Anything that calls them assumes they exist. All clear `Instance = null` in `OnDestroy`/`Despawned` so scene reloads don't leave stale references.
 
-- **`NetworkManager`** (MonoBehaviour, `INetworkRunnerCallbacks`) — owns the `NetworkRunner`, the player prefab, the host/client buttons, the `PlayerRef → NetworkObject` map (`SpawnedCharacters`), and pumps `OnInput`. Spawns the player prefab on `OnPlayerJoined` (server only).
+- **`NetworkManager`** (MonoBehaviour, `INetworkRunnerCallbacks`) — owns the `NetworkRunner`, the player prefab, the `PlayerRef → NetworkObject` map (`SpawnedCharacters`), and pumps `OnInput`. Spawns the player prefab on `OnPlayerJoined` (server only). UI is owned by `LobbyCanvas` — `NetworkManager` only exposes `StartGameHost()` / `StartGameClient()` as a public API.
+- **`LobbyController`** (MonoBehaviour, on `LobbyCanvas`) — wires the Host/Client/StartRound buttons via `Button.onClick.AddListener` and toggles canvas visibility via `Canvas.enabled` based on `GameManager.RoundStarted`.
 - **`GameManager`** (NetworkBehaviour) — round/match flow: `RoundTimer`, `RoundStarted`, `CurrentRound`, `MaxRounds`, `IsGameOver`. Owns `defaultPlayerSpawnPoints` and the spawn-index allocation map. Drives the menu/player camera swap on `RoundStarted` change. Match logic (start round → spawn/reset/enable players → wait for timer → end round → check game-over) lives in `StartRound`/`EndRound`.
 - **`PlayerManager`** (NetworkBehaviour) — thin wrapper around per-player enable/disable. Calls `PlayerController.ChangePlayerEnable(bool)` for a given `PlayerRef`. Used by `GameManager` (round transitions) and `PlayerCombat` (death/respawn).
 - **`GameInput`** (MonoBehaviour) — wraps the generated `PlayerInputActions`, exposes events (`OnPlayerAttack`, `OnPlayerDash`, `OnPlayerInventory`) and polled values (`GetMovementInput`, `GetWeaponAimDirection`). Local-only — networking is not its concern.
@@ -78,6 +90,8 @@ Tilemap-based outdoor arena (`Assets/Tilemap/`). `TransparentDetection` fades tr
 - Cross-component wiring: `[SerializeField]` references for siblings on the same prefab (e.g. `_playerKnockback`, `_playerMovement` on `PlayerCombat`). `GetComponent<>` is used in `Spawned()` only when wiring is implicit. Both styles coexist — prefer explicit serialized references for clarity.
 - C# events (`event Action<...>`) are the standard cross-component signal. `ChangeDetector` is the standard signal *from* networked state *to* render-side reactions.
 - `Debug.Log`/`Debug.LogWarning` messages are tagged with the source class in brackets, e.g. `"[GameManager] Round X ended."`.
+- **UI button wiring is code-only.** Hook handlers via `Button.onClick.AddListener(...)` in a sibling MonoBehaviour's `Start()`, with the buttons exposed as `[SerializeField] Button` fields. Do not use the inspector's OnClick `m_PersistentCalls` panel — it breaks silently on rename and creates fragile cross-prefab references. See `LobbyController` for the canonical pattern.
+- **Singletons clear themselves.** Every `public static Instance` clears in `OnDestroy` (MonoBehaviour) or `Despawned` (NetworkBehaviour) with `if (Instance == this) Instance = null;`. Scene reloads otherwise leave dangling references.
 
 ## Out-of-scope tooling in the repo
 

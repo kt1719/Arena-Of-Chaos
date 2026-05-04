@@ -15,6 +15,10 @@ public class PlayerManager : NetworkBehaviour
         }
     }
 
+    public override void Despawned(NetworkRunner runner, bool hasState) {
+        if (Instance == this) Instance = null;
+    }
+
     public void EnablePlayer(PlayerRef playerRef) {
         if (!HasStateAuthority) return;
         PlayerController playerController = NetworkManager.Instance.GetNetworkObjectFromPlayerRef(playerRef).GetComponent<PlayerController>();

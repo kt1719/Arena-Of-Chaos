@@ -5,20 +5,17 @@ using Fusion.Addons.Physics;
 using Fusion.Sockets;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 {
     // ===== Static Reference =====
     public static NetworkManager Instance { get; private set; }
-    
+
     // ===== Events =====
     public Action<NetworkObject> OnPlayerJoinedNetworkManager;
 
     // ===== Serialized Fields =====
     [SerializeField] private NetworkPrefabRef _playerPrefab;
-    [SerializeField] private Button _startGameHostButton;
-    [SerializeField] private Button _startGameClientButton;
 
     // ===== Public Properties =====
     public NetworkObject LocalPlayerObject => _localPlayerController != null ? _localPlayerController.Object : null;
@@ -38,10 +35,11 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     private void Awake() {
         Instance = this;
     }
-    private void Start() {
-        _startGameHostButton.onClick.AddListener(StartGameHost);
-        _startGameClientButton.onClick.AddListener(StartGameClient);
+
+    private void OnDestroy() {
+        if (Instance == this) Instance = null;
     }
+
     public void StartGameHost() {
         StartGameAsync(GameMode.Host);
     }
