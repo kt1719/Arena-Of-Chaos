@@ -89,8 +89,12 @@ public class GameInput : MonoBehaviour
 
     private void OnDestroy()
     {
-        playerInputActions.Disable();
-        playerInputActions.Dispose();
+        if (playerInputActions != null)
+        {
+            playerInputActions.Disable();
+            playerInputActions.Dispose();
+        }
+        if (Instance == this) Instance = null;
     }
 
     public Vector2 GetMovementInput()

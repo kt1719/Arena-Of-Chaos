@@ -31,6 +31,11 @@ public class ScoreManager : NetworkBehaviour
         Instance = this;
     }
 
+    public override void Despawned(NetworkRunner runner, bool hasState)
+    {
+        if (Instance == this) Instance = null;
+    }
+
     // ===== Score Modification (Host Only) =====
 
     /// <summary>

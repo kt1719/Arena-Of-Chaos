@@ -13,6 +13,11 @@ public class CameraFollow : MonoBehaviour
         _cinemachineCamera = GetComponent<CinemachineCamera>();
     }
 
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     public void SetTarget(Transform target)
     {
         if (_cinemachineCamera != null)
