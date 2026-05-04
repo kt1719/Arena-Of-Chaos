@@ -37,6 +37,8 @@ public class ActiveInventory : MonoBehaviour
 
     private void ToggleActiveHighlight(int indexNum)
     {
+        if (indexNum < 0 || indexNum >= inventorySlots.Count) return;
+        if (inventorySlots[indexNum].GetWeaponInfo() == null) return;
         if (currentActiveSlot == inventorySlots[indexNum]) return;
 
         currentActiveSlot.ToggleOff();

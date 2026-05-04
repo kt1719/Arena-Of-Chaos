@@ -31679,6 +31679,14 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3563565445929370137, guid: 3f053db2707294815937a2762dbbd755, type: 3}
+      propertyPath: weaponInfo
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 4167884428017054109, guid: 3f053db2707294815937a2762dbbd755, type: 3}
+      propertyPath: weaponInfo
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 4848256240654709497, guid: 3f053db2707294815937a2762dbbd755, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -31831,9 +31839,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6985991487078583445, guid: 3f053db2707294815937a2762dbbd755, type: 3}
+      propertyPath: weaponInfo
+      value: 
+      objectReference: {fileID: 11400000, guid: cd334ef14f2d14c2b911960c62f72e26, type: 2}
     - target: {fileID: 8311910821548538060, guid: 3f053db2707294815937a2762dbbd755, type: 3}
       propertyPath: m_Name
       value: UICanvas
+      objectReference: {fileID: 0}
+    - target: {fileID: 8771870500248538319, guid: 3f053db2707294815937a2762dbbd755, type: 3}
+      propertyPath: weaponInfo
+      value: 
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -14,6 +14,8 @@ public class PlayerController : NetworkBehaviour
     private ChangeDetector _changeDetector;
 
     public override void Spawned() {
+        _localInputData.inventorySlotPressed = NetworkInputData.NO_INVENTORY_PRESS;
+
         if (HasInputAuthority) {
             // This is OUR player on this client
             NetworkManager.Instance.RegisterLocalPlayer(this);
@@ -21,12 +23,13 @@ public class PlayerController : NetworkBehaviour
             GameInput.Instance.OnPlayerDash += DashPressed;
             GameInput.Instance.OnPlayerAttack += AttackPressed;
             GameInput.Instance.OnPlayerCancelAttack += AttackReleased;
+            GameInput.Instance.OnPlayerInventory += InventoryPressed;
         }
 
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
         playerVisuals.gameObject.SetActive(false);
     }
-    
+
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
         if (HasInputAuthority)
@@ -36,6 +39,7 @@ public class PlayerController : NetworkBehaviour
         GameInput.Instance.OnPlayerDash -= DashPressed;
         GameInput.Instance.OnPlayerAttack -= AttackPressed;
         GameInput.Instance.OnPlayerCancelAttack -= AttackReleased;
+        GameInput.Instance.OnPlayerInventory -= InventoryPressed;
     }
 
     public override void Render() {
@@ -60,18 +64,25 @@ public class PlayerController : NetworkBehaviour
         _localInputData.attackPressed = false;
     }
 
+    private void InventoryPressed(GameInput.OnPlayerInventoryArgs e) {
+        _localInputData.inventorySlotPressed = (byte)e.pressedButton;
+    }
+
     // ConsumeInput is called by NetworkManager to clear the input data
     public PlayerControllerLocalInputData ConsumeInput() {
-        if (!PlayerEnabled) {return default;} // If it is disabled do not allow for the player to move;
+        if (!PlayerEnabled) {
+            return new PlayerControllerLocalInputData { inventorySlotPressed = NetworkInputData.NO_INVENTORY_PRESS };
+        }
 
         _localInputData.movementDirection = GameInput.Instance.GetMovementInput();
         _localInputData.weaponAimDirection = GameInput.Instance.GetWeaponAimDirection(transform);
-        
+
         // First we store a snapshot of the local input data before clearing
         PlayerControllerLocalInputData localInputDataCopy = _localInputData;
 
         // Clear the local input data
         _localInputData.dashPressed = false;
+        _localInputData.inventorySlotPressed = NetworkInputData.NO_INVENTORY_PRESS;
 
         // Return the snapshot
         return localInputDataCopy;
@@ -87,4 +98,5 @@ public struct PlayerControllerLocalInputData {
     public Vector2 weaponAimDirection;
     public bool dashPressed;
     public bool attackPressed;
+    public byte inventorySlotPressed;
 }

@@ -7,12 +7,13 @@ public class PlayerCombat : NetworkBehaviour, IHittable
 
     // ===== Networked Fields =====
     [Networked] private BaseWeapon CurrentWeapon { get; set; }
+    [Networked] private byte ActiveWeaponIndex { get; set; }
     [Networked] public NetworkBool IsDead { get; private set; }
     [Networked] private TickTimer RespawnTimer { get; set; }
     [Networked] private TickTimer InvincibilityTimer { get; set; }
 
     // ===== Serialized Fields =====
-    [SerializeField] private WeaponInfo _testWeapon;
+    [SerializeField] private WeaponInfo[] _startingWeapons;
     [SerializeField] private NetworkObject _weaponParent;
     [SerializeField] private PlayerVisual _playerVisual;
     [SerializeField] private Knockback _playerKnockback;
@@ -48,9 +49,10 @@ public class PlayerCombat : NetworkBehaviour, IHittable
         if (HasStateAuthority)
         {
             _playerKnockback.OnKnockbackEnd += CheckDeath;
-        }
 
-        SpawnWeapon(_testWeapon);
+            ActiveWeaponIndex = 0;
+            SpawnWeapon(_startingWeapons[ActiveWeaponIndex]);
+        }
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState) {
@@ -96,8 +98,10 @@ public class PlayerCombat : NetworkBehaviour, IHittable
             // Input
             bool attackPressed = data.buttons.IsSet(NetworkInputData.ATTACK);
             Vector2 weaponAimDirection = data.weaponAimDirection;
+            byte slotPressed = data.inventorySlotPressed;
 
             // Action
+            if (slotPressed != NetworkInputData.NO_INVENTORY_PRESS) SwitchWeapon(slotPressed);
             UpdatePlayerFacingDirection(weaponAimDirection);
             Attack(attackPressed);
         }
@@ -178,6 +182,18 @@ public class PlayerCombat : NetworkBehaviour, IHittable
                 o.GetComponent<BaseWeapon>().Init(weaponInfo.instantiationOffset, _weaponParent, Object);
             });
         }
+    }
+
+    private void SwitchWeapon(byte slot) {
+        if (!HasStateAuthority) return;
+        if (slot >= _startingWeapons.Length) return;
+        if (slot == ActiveWeaponIndex) return;
+        if (_startingWeapons[slot] == null) return;
+
+        if (CurrentWeapon != null) Runner.Despawn(CurrentWeapon.Object);
+
+        ActiveWeaponIndex = slot;
+        SpawnWeapon(_startingWeapons[slot]);
     }
 
     private void Attack(bool attackPressed) {
