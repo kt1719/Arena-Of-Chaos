@@ -114,10 +114,10 @@ public class SlimeLunge : NetworkBehaviour
         {
             if (hit.transform.root == transform.root) continue;
 
-            IHittable hittable = hit.GetComponent<IHittable>();
-            if (hittable == null) continue;
+            HurtBox hurtBox = hit.GetComponent<HurtBox>();
+            if (hurtBox == null || hurtBox.Owner == null) continue;
 
-            hittable.ApplyHit(_damage, _dashDirection, _knockbackForce, _knockbackDuration, PlayerRef.None);
+            hurtBox.Owner.ApplyHit(_damage, _dashDirection, _knockbackForce, _knockbackDuration, PlayerRef.None);
             _hasHitThisLunge = true;
             return;
         }

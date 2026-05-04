@@ -455,7 +455,7 @@ MonoBehaviour:
   _lungeRange: 2.5
   _playerLayer:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 128
   _obstacleLayer:
     serializedVersion: 2
     m_Bits: 257
@@ -559,4 +559,4 @@ MonoBehaviour:
   _hitRadius: 0.5
   _playerLayer:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 128

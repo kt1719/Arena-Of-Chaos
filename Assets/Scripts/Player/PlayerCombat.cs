@@ -1,3 +1,4 @@
+using System;
 using Fusion;
 using UnityEngine;
 
@@ -20,20 +21,29 @@ public class PlayerCombat : NetworkBehaviour, IHittable
     [SerializeField] private float _respawnDelay = 3f;
     [SerializeField] private float _invincibilityDuration = 1.5f;
 
+    // ===== Events =====
+    public event Action OnDied;
+    public event Action OnRespawned;
+
+    // ===== Change Detection =====
+    private ChangeDetector _changeDetector;
+
     // ===== Private Variables =====
     private PlayerStats _stats;
-    private Collider2D _collider;
     private PlayerRef _lastAttacker;
+
+    // ===== Lifecycle =====
 
     public override void Spawned() {
         _stats = GetComponent<PlayerStats>();
-        _collider = GetComponent<Collider2D>();
 
         if (_stats == null)
         {
             Debug.LogError($"[PlayerCombat] PlayerStats component not found on {gameObject.name}. Combat will not function correctly.", this);
             return;
         }
+
+        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
 
         if (HasStateAuthority)
         {
@@ -55,16 +65,16 @@ public class PlayerCombat : NetworkBehaviour, IHittable
     }
 
     public override void Render() {
+        if (_changeDetector == null) return;
 
-    }
-
-    private void SpawnWeapon(WeaponInfo weaponInfo) {
-        if (HasStateAuthority) {
-            BaseWeapon weaponPrefab = weaponInfo.weaponPrefab;
-            CurrentWeapon = Runner.Spawn(weaponPrefab, Vector3.zero, Quaternion.identity, Object.InputAuthority, (runner, o) =>
+        foreach (var change in _changeDetector.DetectChanges(this))
+        {
+            switch (change)
             {
-                o.GetComponent<BaseWeapon>().Init(_testWeapon.instantiationOffset, _weaponParent, Object);
-            });
+                case nameof(IsDead):
+                    HandleDeathStateChanged();
+                    break;
+            }
         }
     }
 
@@ -93,6 +103,19 @@ public class PlayerCombat : NetworkBehaviour, IHittable
         }
     }
 
+    // ===== Public API =====
+
+    /// <summary>The hurtbox collider used by client-side hit prediction.</summary>
+    public Collider2D HurtBox => _hurtBoxCollider;
+
+    /// <summary>
+    /// True while the post-respawn invincibility window is active. Mirrors
+    /// the gate at <see cref="ApplyHit"/> so client-side predictors can
+    /// skip targets that authority would reject.
+    /// </summary>
+    public bool IsInvincible =>
+        Runner != null && !InvincibilityTimer.ExpiredOrNotRunning(Runner);
+
     public void ApplyHit(int damage, Vector2 hitDirection, float knockbackForce, float knockbackDuration, PlayerRef attacker) {
         if (!HasStateAuthority) return;
         if (IsDead) return;
@@ -106,15 +129,15 @@ public class PlayerCombat : NetworkBehaviour, IHittable
         _playerKnockback.ApplyKnockback(hitDirection, knockbackForce, knockbackDuration);
     }
 
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All, HostMode = RpcHostMode.SourceIsServer)]
-    private void RPC_TriggerHitFlash() {
-        _playerVisual.TriggerHitFlash();
-    }
+    /// <summary>
+    /// Called by GameManager on round start to cleanly reset a player who is still dead.
+    /// </summary>
+    public void ForceResetDeathState() {
+        if (!HasStateAuthority) return;
 
-    private void Attack(bool attackPressed) {
-        if (!attackPressed) return;
-
-        CurrentWeapon.Attack();
+        IsDead = false;
+        RespawnTimer = default;
+        InvincibilityTimer = default;
     }
 
     // ===== Death & Respawn =====
@@ -130,15 +153,7 @@ public class PlayerCombat : NetworkBehaviour, IHittable
         IsDead = true;
         RespawnTimer = TickTimer.CreateFromSeconds(Runner, _respawnDelay);
 
-        // Report kill and death to ScoreManager
-        if (ScoreManager.Instance != null)
-        {
-            ScoreManager.Instance.AddPlayerKill(_lastAttacker);
-            ScoreManager.Instance.AddDeath(Object.InputAuthority);
-        }
-
-        if (_collider != null) _collider.enabled = false;
-        if (_hurtBoxCollider != null) _hurtBoxCollider.enabled = false;
+        ReportDeathToScore();
         PlayerManager.Instance.DisablePlayer(Object.InputAuthority);
     }
 
@@ -146,29 +161,48 @@ public class PlayerCombat : NetworkBehaviour, IHittable
         if (!HasStateAuthority) return;
 
         IsDead = false;
-
         _stats.CurrentHealth = _stats.MaxHealth;
-        if (_collider != null) _collider.enabled = true;
-        if (_hurtBoxCollider != null) _hurtBoxCollider.enabled = true;
-
-        Vector3 spawnPosition = GameManager.Instance.GetPlayerSpawnPoint(Object.InputAuthority);
-        transform.position = spawnPosition;
-
+        transform.position = GameManager.Instance.GetPlayerSpawnPoint(Object.InputAuthority);
         InvincibilityTimer = TickTimer.CreateFromSeconds(Runner, _invincibilityDuration);
+
         PlayerManager.Instance.EnablePlayer(Object.InputAuthority);
     }
 
-    /// <summary>
-    /// Called by GameManager on round start to cleanly reset a player who is still dead.
-    /// </summary>
-    public void ForceResetDeathState() {
-        if (!HasStateAuthority) return;
+    // ===== Private =====
 
-        IsDead = false;
-        RespawnTimer = default;
-        InvincibilityTimer = default;
-        if (_collider != null) _collider.enabled = true;
-        if (_hurtBoxCollider != null) _hurtBoxCollider.enabled = true;
+    private void SpawnWeapon(WeaponInfo weaponInfo) {
+        if (HasStateAuthority) {
+            BaseWeapon weaponPrefab = weaponInfo.weaponPrefab;
+            CurrentWeapon = Runner.Spawn(weaponPrefab, Vector3.zero, Quaternion.identity, Object.InputAuthority, (runner, o) =>
+            {
+                o.GetComponent<BaseWeapon>().Init(weaponInfo.instantiationOffset, _weaponParent, Object);
+            });
+        }
+    }
+
+    private void Attack(bool attackPressed) {
+        if (!attackPressed) return;
+
+        CurrentWeapon.Attack();
+    }
+
+    // Reactive — runs on every peer when IsDead flips.
+    private void HandleDeathStateChanged() {
+        SetHurtBoxEnabled(!IsDead);
+
+        if (IsDead) OnDied?.Invoke();
+        else        OnRespawned?.Invoke();
+    }
+
+    private void SetHurtBoxEnabled(bool enabled) {
+        if (_hurtBoxCollider != null) _hurtBoxCollider.enabled = enabled;
+    }
+
+    private void ReportDeathToScore() {
+        if (ScoreManager.Instance == null) return;
+
+        ScoreManager.Instance.AddPlayerKill(_lastAttacker);
+        ScoreManager.Instance.AddDeath(Object.InputAuthority);
     }
 
     private void UpdatePlayerFacingDirection(Vector2 weaponAimDirection)
@@ -181,5 +215,12 @@ public class PlayerCombat : NetworkBehaviour, IHittable
     private float CalculateMouseFollowWithOffset(Vector2 weaponAimDirection)
     {
         return Mathf.Atan2(weaponAimDirection.y, Mathf.Abs(weaponAimDirection.x)) * Mathf.Rad2Deg;
+    }
+
+    // ===== RPC =====
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All, HostMode = RpcHostMode.SourceIsServer)]
+    private void RPC_TriggerHitFlash() {
+        _playerVisual.TriggerHitFlash();
     }
 }
