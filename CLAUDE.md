@@ -13,7 +13,7 @@ The full game design is in `docs/game-design/gdd-v1.md`. Read that first when in
 This is a Unity project — there is no command-line build script. All work happens through:
 
 - **Open the project** in Unity Hub at the repo root (the `Assets/`, `Packages/`, `ProjectSettings/` triple).
-- **Main scene:** `Assets/Scenes/GameScene.unity` is the only play scene (build index 0). There is also a sandbox scene at `Assets/Test/Test.unity` (build index 1, disabled).
+- **Scenes:** `Assets/Scenes/GameScene.unity` is the primary play scene (build index 0). `Assets/Scenes/RoundTimer.unity` (build index 1) holds round-timer / scoreboard / inventory UI work. `Assets/Test/Test.unity` (build index 2, disabled) is the sandbox.
 - **Multiplayer testing:** the project uses `com.unity.multiplayer.playmode` so you can run multiple Editor instances. Sessions hardcode the Photon room name `"TestRoom"` (see `NetworkManager.StartGameAsync`). The lobby UI lives on `LobbyCanvas` — click **Host** in one instance, **Client** in others, then the host clicks **StartRound**.
 - **Tests:** `com.unity.test-framework` is installed but no automated tests have been authored yet — `Assets/Test/` contains manual sandbox prefabs/scripts (`BasicSpawner.cs`, `BallTest.cs`, etc.), not unit tests. Run them via `Window → General → Test Runner` if/when tests are added.
 
