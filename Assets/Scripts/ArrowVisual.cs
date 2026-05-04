@@ -9,7 +9,7 @@ using UnityEngine;
 public class ArrowVisual : MonoBehaviour
 {
     // ── Constants ──
-    private const float PREDICTION_TIMEOUT = 0.5f;
+    public const float DEFAULT_PREDICTION_TIMEOUT = 0.5f;
 
     // ── Identity (set once per spawn) ──
     public int BufferIndex { get; private set; }
@@ -104,11 +104,15 @@ public class ArrowVisual : MonoBehaviour
     /// <summary>
     /// Hides the arrow and plays a predicted-hit VFX.
     /// The visual stays alive so the manager can confirm or roll back.
+    /// Caller picks the timeout: shooter-side prediction uses the default
+    /// 0.5s, victim-side prediction uses a shorter window so a misprediction
+    /// recovery doesn't visibly pop the arrow back in mid-flight after the
+    /// real arrow has already passed the victim.
     /// </summary>
-    public void PredictHit(Vector2 hitPosition, Transform vfxPrefab)
+    public void PredictHit(Vector2 hitPosition, Transform vfxPrefab, float timeout = DEFAULT_PREDICTION_TIMEOUT)
     {
         IsPredictedHit = true;
-        _predictionTimer = PREDICTION_TIMEOUT;
+        _predictionTimer = timeout;
 
         SetRenderersVisible(false);
         SetTrailEmitting(false);
@@ -123,7 +127,7 @@ public class ArrowVisual : MonoBehaviour
     public void RecoverFromMisprediction()
     {
         IsPredictedHit = false;
-        _predictionTimer = PREDICTION_TIMEOUT;
+        _predictionTimer = DEFAULT_PREDICTION_TIMEOUT;
 
         SetRenderersVisible(true);
         ClearTrail();
@@ -167,7 +171,7 @@ public class ArrowVisual : MonoBehaviour
         HasFirstRendered = false;
         FirstRenderTime = 0f;
         _vfxPlayed = false;
-        _predictionTimer = PREDICTION_TIMEOUT;
+        _predictionTimer = DEFAULT_PREDICTION_TIMEOUT;
 
         SetRenderersVisible(true);
         SetTrailEmitting(false);

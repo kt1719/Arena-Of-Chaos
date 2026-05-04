@@ -144,6 +144,7 @@ GameObject:
   - component: {fileID: 6036445608410771707}
   - component: {fileID: 6361684972336756785}
   - component: {fileID: 1064715802439467724}
+  - component: {fileID: 5400000000000000001}
   m_Layer: 7
   m_Name: HurtBox
   m_TagString: Untagged
@@ -232,6 +233,19 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 0.64, y: 0.95}
   m_EdgeRadius: 0
+--- !u!114 &5400000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2839017117733916694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d4f1c3a9e2b4f5d8c6a1e3d2f9b7c5a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _owner: {fileID: 217004648115528771}
 --- !u!1 &2855595555570944877
 GameObject:
   m_ObjectHideFlags: 0
@@ -438,7 +452,9 @@ MonoBehaviour:
   _playerVisual: {fileID: 4940600307512176112}
   _playerKnockback: {fileID: 5557956582610753161}
   _playerMovement: {fileID: 6355764312204515265}
+  _hurtBoxCollider: {fileID: 1064715802439467724}
   _respawnDelay: 3
+  _invincibilityDuration: 1.5
 --- !u!114 &4923285046338211585
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -477,6 +493,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerKnockback
   _playerKnockback: {fileID: 5557956582610753161}
+  _playerCombat: {fileID: 217004648115528771}
+  _bodyCollider: {fileID: 6130702535687927520}
 --- !u!114 &4148453564061661661
 MonoBehaviour:
   m_ObjectHideFlags: 0

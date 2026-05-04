@@ -58,7 +58,20 @@ public class ArrowVisualManager
     private Transform _poolRoot;
 
     // ── Pre-allocated overlap buffer for prediction ──
+    // NOT reentrant — shooter and victim prediction passes both reuse this
+    // buffer, but they run sequentially in the same UpdateVisuals call.
     private readonly Collider2D[] _predictionOverlaps = new Collider2D[16];
+
+    // ── Victim-side prediction (lazy-resolved local hurtbox) ──
+    /// <summary>
+    /// Shorter than the shooter's 0.5s default. The victim mispredicts more
+    /// often (any time the shooter actually missed, hit a wall first, or hit
+    /// someone else) and a long timeout would visibly pop the arrow back in
+    /// well after it should already have flown past the victim.
+    /// </summary>
+    private const float VICTIM_PREDICTION_TIMEOUT = 0.2f;
+    private PlayerCombat _localCombat;
+    private PlayerMovement _localMovement;
 
     // ════════════════════════════════════════
     //  Initialisation
@@ -215,11 +228,16 @@ public class ArrowVisualManager
             if (TryFinalise(i, visual, data, renderTime)) continue;
             if (TryExpire(i, visual, data, renderTime)) continue;
 
-            // Only the shooter runs prediction. Proxies rely on the server-confirmed
-            // hit path (TryFinalise) — predicting on a proxy compares mismatched
-            // timelines and produces wrong results often enough to be net-negative.
+            // Shooter predicts against all targets (full Physics2D scan).
+            // Non-owner peers run a narrower victim-side prediction that
+            // only checks the local player's own hurtbox — perfect-info
+            // case (zero-latency knowledge of own position), so it doesn't
+            // suffer the timeline mismatch that makes general proxy
+            // prediction unreliable.
             if (isOwner)
                 RunShooterPrediction(visual, prevPos, newPos);
+            else
+                RunVictimPrediction(visual, prevPos, newPos);
         }
     }
 
@@ -433,6 +451,19 @@ public class ArrowVisualManager
                 && target.InputAuthority != _networkObject.InputAuthority
                 && target.GetComponent<IHittable>() != null)
             {
+                // Mirror the authority's i-frame gates from PlayerCombat.ApplyHit
+                // so we don't predict a hit the server is guaranteed to reject —
+                // that's the artifact where an arrow grazes a dasher and gets
+                // stuck in a 0.5s predict-hide-recover loop.
+                PlayerCombat targetCombat = target.GetComponent<PlayerCombat>();
+                if (targetCombat != null)
+                {
+                    if (targetCombat.IsDead) continue;
+                    if (targetCombat.IsInvincible) continue;
+                    PlayerMovement targetMovement = target.GetComponent<PlayerMovement>();
+                    if (targetMovement != null && targetMovement.IsDashing) continue;
+                }
+
                 visual.PredictHit(samplePos, _hitVfxPrefab);
                 return true;
             }
@@ -449,11 +480,115 @@ public class ArrowVisualManager
     }
 
     // ════════════════════════════════════════
+    //  Victim-Side Hit Prediction
+    // ════════════════════════════════════════
+
+    /// <summary>
+    /// Mirrors the shooter-side prediction loop, but only checks the local
+    /// player's own hurtbox. The local peer has zero-latency knowledge of
+    /// its own position, so this is the one proxy-prediction case that
+    /// avoids the timeline-mismatch problem that makes general proxy
+    /// prediction unreliable. Predicts only the arrow's own VFX/disappear —
+    /// the hit-flash / knockback / health-change still come from the
+    /// authority's RPC + networked health path.
+    /// </summary>
+    private void RunVictimPrediction(ArrowVisual visual, Vector2 prevPos, Vector2 currPos)
+    {
+        if (!ResolveLocalPlayer()) return;
+
+        // Defensive: the shooter case is already handled by the isOwner branch.
+        // If the local player happens to also be the arrow owner, bail.
+        if (_localCombat.Object.InputAuthority == _networkObject.InputAuthority) return;
+
+        // Mirror authority i-frame gates from PlayerCombat.ApplyHit so we
+        // don't predict a hit the server would reject.
+        if (_localCombat.IsDead) return;
+        if (_localCombat.IsInvincible) return;
+        if (_localMovement != null && _localMovement.IsDashing) return;
+
+        if (!visual.IsPredictedHit)
+            PredictLocalVictimHit(visual, prevPos, currPos);
+
+        if (visual.IsPredictedHit)
+        {
+            visual.TickPredictionTimer(Time.deltaTime);
+            if (visual.PredictionTimerExpired)
+                visual.RecoverFromMisprediction();
+        }
+    }
+
+    /// <summary>
+    /// Multi-sample swept overlap mirroring <see cref="PredictLocalHit"/>'s
+    /// sample formula and <see cref="ArrowHitDetection.DetectEntityHit"/>'s
+    /// sample count, so victim-side prediction agrees with the server's
+    /// authoritative sweep.
+    /// </summary>
+    private void PredictLocalVictimHit(ArrowVisual visual, Vector2 prevPos, Vector2 currPos)
+    {
+        Vector2 delta = currPos - prevPos;
+        float distance = delta.magnitude;
+
+        if (distance < 0.0001f)
+        {
+            TryPredictVictimAtPosition(visual, currPos);
+            return;
+        }
+
+        int sampleCount = Mathf.CeilToInt(distance / _hitRadius) + 1;
+
+        for (int i = 0; i <= sampleCount; i++)
+        {
+            float t = (float)i / sampleCount;
+            Vector2 samplePos = Vector2.Lerp(prevPos, currPos, t);
+
+            if (TryPredictVictimAtPosition(visual, samplePos))
+                return;
+        }
+    }
+
+    private bool TryPredictVictimAtPosition(ArrowVisual visual, Vector2 samplePos)
+    {
+        Collider2D hurtBox = _localCombat.HurtBox;
+        if (hurtBox == null || !hurtBox.enabled) return false;
+
+        // ClosestPoint returns samplePos itself if it's already inside the
+        // collider (distance 0), so this handles the inside-the-hurtbox
+        // case naturally.
+        Vector2 closest = hurtBox.ClosestPoint(samplePos);
+        if (Vector2.Distance(samplePos, closest) > _hitRadius) return false;
+
+        visual.PredictHit(samplePos, _hitVfxPrefab, VICTIM_PREDICTION_TIMEOUT);
+        return true;
+    }
+
+    /// <summary>
+    /// Lazy-resolves the local player's combat + movement components.
+    /// Returns false until the local player has spawned. Re-resolves if
+    /// the cached object goes null (respawn / scene reload).
+    /// </summary>
+    private bool ResolveLocalPlayer()
+    {
+        if (_localCombat != null && _localCombat.Object != null) return true;
+
+        NetworkObject localObj = NetworkManager.Instance != null
+            ? NetworkManager.Instance.LocalPlayerObject
+            : null;
+        if (localObj == null) return false;
+
+        _localCombat = localObj.GetComponent<PlayerCombat>();
+        _localMovement = localObj.GetComponent<PlayerMovement>();
+        return _localCombat != null;
+    }
+
+    // ════════════════════════════════════════
     //  Cleanup
     // ════════════════════════════════════════
 
     public void Cleanup()
     {
+        _localCombat = null;
+        _localMovement = null;
+
         if (_activeVisuals == null) return;
 
         for (int i = 0; i < _activeVisuals.Length; i++)

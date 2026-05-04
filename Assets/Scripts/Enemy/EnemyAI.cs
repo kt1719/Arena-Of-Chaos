@@ -204,14 +204,18 @@ public class EnemyAI : NetworkBehaviour
         foreach (Collider2D hit in hits)
         {
             if (hit.transform.root == transform.root) continue;
-            if (hit.GetComponent<IHittable>() == null) continue;
-            if (!HasLineOfSight(hit.transform)) continue;
 
-            float dist = Vector2.Distance(transform.position, hit.transform.position);
+            HurtBox hurtBox = hit.GetComponent<HurtBox>();
+            if (hurtBox == null || hurtBox.Owner == null) continue;
+
+            Transform ownerTransform = hurtBox.OwnerTransform;
+            if (!HasLineOfSight(ownerTransform)) continue;
+
+            float dist = Vector2.Distance(transform.position, ownerTransform.position);
             if (dist < nearestDist)
             {
                 nearestDist = dist;
-                nearest = hit.transform;
+                nearest = ownerTransform;
             }
         }
 

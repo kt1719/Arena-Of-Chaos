@@ -142,11 +142,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd2bc5a6efe914544ad940fff7475277, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  _CurrentRound: 0
+  _IsGameOver: 0
+  defaultRoundTime: 120
+  maxRounds: 3
   defaultPlayerSpawnPoints:
   - {fileID: 8065316805796380331}
   - {fileID: 6164288690234948766}
   - {fileID: 1362342601138901039}
   - {fileID: 4558312857864031179}
+  playerCamera: {fileID: 0}
+  menuCamera: {fileID: 0}
 --- !u!114 &1036946672131033574
 MonoBehaviour:
   m_ObjectHideFlags: 0
