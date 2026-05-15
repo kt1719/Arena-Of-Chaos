@@ -30,6 +30,8 @@ A game is an **engine of experience**. The chain is `Mechanics → Events → Em
 
 ## 1. Economy Specification
 
+> **⚠ Revision note (2026-05-15):** This section has been superseded by a focused exploration in **`auto-battler-economy-exploration.md`**, which surveys 13+ economy approaches across two rounds of designer dialogue and lands on **three viable options (X, Y, Z)** with explicit pros/cons. The numbers in §1.3-§1.7 below describe the **retired Model A** (bank-and-interest) and are preserved for historical reference while the team picks one of X/Y/Z. The exploration doc is the authoritative source on the trade-offs; this section will be rewritten once the team commits to a prototype direction.
+
 ### 1.1 Goals (in priority order)
 
 1. **Generate save-vs-spend tension every round.** Per Sylvester's "feeling the future" principle in Ch. 5, an interesting decision requires the player to be able to *prefeel* the consequences of saving vs. spending. The economy is the engine of those decisions.
@@ -37,38 +39,28 @@ A game is an **engine of experience**. The chain is `Mechanics → Events → Em
 3. **Make rarity tier feel valuable across the 5 rounds.** Per Ch. 8 (Motivation), the dopamine peak of acquisition has to be aligned with rare-tier unlocks. The economy must price rare options high enough that affording them feels like a win.
 4. **Resolve in one resource.** Per the elegance smell of *simplicity*, dual currency in a 3-5 minute match crosses the FTUE complexity budget.
 
-### 1.2 Alternatives considered, and the chosen approach
+### 1.2 Alternatives considered — see exploration doc
 
-Before specifying the recommendation, four credible economy models were considered. The relevant comparables — described *accurately*, since the previous draft of this doc was sloppy about how they actually work — are:
+Initial draft of this section picked a single Balatro-lineage answer (Model A, bank + interest) without rigorously surveying the design space. A focused two-round designer dialogue surveyed 13 candidate economy models, cut 8 for structural reasons, identified 3 viable options, and explicitly *refused to pick one* — because the choice between them depends on the team's risk profile and production budget, not on a correctness argument.
 
-| Model | Accurate lineage | Save-vs-spend tension? | Carryover? | Best fit when |
-|-------|------------------|------------------------|------------|---------------|
-| **A. Single currency, bank-and-interest** | Balatro (interest, capped) — *not* TFT, which is dual (see Model C) | Yes — interest rewards saving | Yes | The prep-puzzle target lives in budgeting decisions, and match is long enough (≥4 rounds) for compounding to matter. |
-| **B. Single currency, per-round expiration** | Super Auto Pets, Hearthstone Battlegrounds — both expire gold at round end | No — gold cannot be saved | No | Target is tempo/decisiveness; the prep decision is *"what to spend this round on"*, not *"when to spend over time"*. |
-| **C. Dual currency** | TFT (gold buys units; XP buys level; both are first-class resources, and trading gold→XP via the "buy XP" button is a key strategic axis) | Partial — saving gold to dump on XP is the indirect save | Yes | Match length is ≥20 rounds and the design wants a *second* strategic axis to master. |
-| **D. Hybrid expiring + bank** | No canonical genre reference | Partial — only the bank portion is saveable | Partial | The design wants *forced* spend pressure plus *some* long-horizon saving. |
+**See `auto-battler-economy-exploration.md` for the full survey, sample R3 prep walkthroughs for each option, elegance audits, FTUE costs, and decision criteria.**
 
-#### Why Model A is recommended
+**The three viable options that doc lands on:**
 
-Per the goals in §1.1 — particularly **goal 1 (save-vs-spend tension)** — Model A is the only option that fully delivers the prep-puzzle emotional target.
+| Option | One-line shape | Strongest argument | Strongest objection |
+|--------|---------------|--------------------|---------------------|
+| **X. B + S** (Snap-shape clean) | Charge expires per round; next-round shop preview visible | Lowest FTUE, cheapest prototype, Snap-tested per-round-puzzle pattern | Lowest differentiation from existing autobattlers |
+| **Y. H + R** (Action-points) | AP per round (with synergy refunds) + per-ball modifier inventory grid | "The unequipped promise" — unique emotional event no autobattler currently produces | Higher UI cost; AP rigidity could feel restrictive |
+| **Z. B + S + proc-order** (Snap-shape with proc-puzzle) | Option X + modifier proc-order on each ball is part of the puzzle | Adds genuine puzzle depth at minimal FTUE cost | Risks being a "depth-only" mechanic that new players ignore |
 
-- **Model B (SAP/HBG-style expiration)** is genuinely attractive for *simplicity*: no interest math, no streak tracking, just "spend it or lose it" every round. For a 5-round match with a 25-second prep timer, this argument has weight. But it eliminates the "save now to power-spike later" decision *by design*. The prep-puzzle the GDD targets is specifically the puzzle of *when* to spend, not *what* to spend on. Without carryover, that puzzle doesn't exist; the prep decision collapses to "buy the best thing on offer this round." That is still a real decision but a narrower one, and it does not earn its 25-second timer. Per Sylvester's *decision variation* (Ch. 5), the same decision repeated 5 rounds is staler than 5 different-shape decisions.
-- **Model C (dual currency, true TFT)** is attractive for *depth* — TFT's gold/XP trade-off is one of the most respected mechanics in the autochess genre. But TFT runs ~25-30 rounds; a 5-round match doesn't give XP enough time to compound into a strategic axis. Adding XP also doubles the FTUE budget — a new player would need to learn *both* economies in their first match. Reject on elegance smell #2 (*simplicity*) and skill barrier (Ch. 3).
-- **Model D (hybrid)** is attractive in theory but has *no canonical lineage* (so players cannot reuse genre conventions), *no proven tuning*, and creates two simultaneous resource pools to track in a 25-second timer. Reject on *reuses conventions* and *similar scale*.
+**Model A (bank + interest, originally specified in §1.3-§1.7 below) was retired.** The runtime argument: interest cannot meaningfully compound in 5 rounds; the decision degenerates to "save in R1 or don't." It is not a wrong mechanic — it's wrong *for this runtime*. If the design later expands to Bo7 or longer, Model A becomes viable.
 
-#### What we are giving up by picking Model A
+**The exploration doc's lean** (with the caveat that this is a design-stance call, not a correctness call):
+1. Prototype **Option X** first (cheapest signal).
+2. If X feels flat, escalate to **Option Z**.
+3. Treat **Option Y** as the differentiated alternative if market positioning demands an autobattler-first economy.
 
-Worth naming honestly:
-
-- **FTUE complexity premium.** A new player must internalize "Charge carries over + interest exists + streaks exist" within their first 1-2 matches. This is real cognitive load. Mitigation: the tutorial (§8) introduces these mechanics one per round in match 1.
-- **Hoard-and-stall risk.** An aggressively-saving player might *never spend* until R4-R5, eating R1-R3 losses to maximize endgame. This is the analog of TFT's "fast 9" strategy. Mitigation: the round-by-round modifier-slot unlock structure (R2 slot 1, R3 slot 2, R4 upgrades) makes early Charge useful even if hoarded. A player hoarding through R1-R2 doesn't lose access to the R3 modifier slot — they enter R3 with extra Charge to spend on it. This makes hoarding a *legitimate strategy*, not a degenerate one — the design's answer to "lose R1 to bank Charge" is "yes, that's a real strategy, and the opponent must also plan for it."
-- **A small interest math overhead each round.** The player mentally computes "1 Charge per 5 banked" each prep phase. ~2 seconds of cognitive load. Acceptable; the calculation is visible in the UI (interest tier shows as "+2 next round").
-
-#### The chosen currency
-
-**Single currency: "Charge."** Chosen for fiction-mechanics fit (the balls are kinetic; they carry charge), one syllable for chat/UI, and clear plural form ("3 Charge").
-
-❓ **Playtest target on the model itself, not just the numbers:** If after 200 hours of playtest >25% of players never engage with the interest mechanic (they always spend to zero), Model A is over-designed for the audience and Model B should be re-evaluated.
+The sections below (§1.3-§1.7) preserve **Model A's original numerical spec** for historical reference. They are not the current recommendation. Once the team commits to X / Y / Z, this section will be rewritten with the chosen option's tuned numbers.
 
 ### 1.3 Earning structure
 
