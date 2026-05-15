@@ -37,9 +37,38 @@ A game is an **engine of experience**. The chain is `Mechanics → Events → Em
 3. **Make rarity tier feel valuable across the 5 rounds.** Per Ch. 8 (Motivation), the dopamine peak of acquisition has to be aligned with rare-tier unlocks. The economy must price rare options high enough that affording them feels like a win.
 4. **Resolve in one resource.** Per the elegance smell of *simplicity*, dual currency in a 3-5 minute match crosses the FTUE complexity budget.
 
-### 1.2 Currency
+### 1.2 Alternatives considered, and the chosen approach
+
+Before specifying the recommendation, four credible economy models were considered. The relevant comparables — described *accurately*, since the previous draft of this doc was sloppy about how they actually work — are:
+
+| Model | Accurate lineage | Save-vs-spend tension? | Carryover? | Best fit when |
+|-------|------------------|------------------------|------------|---------------|
+| **A. Single currency, bank-and-interest** | Balatro (interest, capped) — *not* TFT, which is dual (see Model C) | Yes — interest rewards saving | Yes | The prep-puzzle target lives in budgeting decisions, and match is long enough (≥4 rounds) for compounding to matter. |
+| **B. Single currency, per-round expiration** | Super Auto Pets, Hearthstone Battlegrounds — both expire gold at round end | No — gold cannot be saved | No | Target is tempo/decisiveness; the prep decision is *"what to spend this round on"*, not *"when to spend over time"*. |
+| **C. Dual currency** | TFT (gold buys units; XP buys level; both are first-class resources, and trading gold→XP via the "buy XP" button is a key strategic axis) | Partial — saving gold to dump on XP is the indirect save | Yes | Match length is ≥20 rounds and the design wants a *second* strategic axis to master. |
+| **D. Hybrid expiring + bank** | No canonical genre reference | Partial — only the bank portion is saveable | Partial | The design wants *forced* spend pressure plus *some* long-horizon saving. |
+
+#### Why Model A is recommended
+
+Per the goals in §1.1 — particularly **goal 1 (save-vs-spend tension)** — Model A is the only option that fully delivers the prep-puzzle emotional target.
+
+- **Model B (SAP/HBG-style expiration)** is genuinely attractive for *simplicity*: no interest math, no streak tracking, just "spend it or lose it" every round. For a 5-round match with a 25-second prep timer, this argument has weight. But it eliminates the "save now to power-spike later" decision *by design*. The prep-puzzle the GDD targets is specifically the puzzle of *when* to spend, not *what* to spend on. Without carryover, that puzzle doesn't exist; the prep decision collapses to "buy the best thing on offer this round." That is still a real decision but a narrower one, and it does not earn its 25-second timer. Per Sylvester's *decision variation* (Ch. 5), the same decision repeated 5 rounds is staler than 5 different-shape decisions.
+- **Model C (dual currency, true TFT)** is attractive for *depth* — TFT's gold/XP trade-off is one of the most respected mechanics in the autochess genre. But TFT runs ~25-30 rounds; a 5-round match doesn't give XP enough time to compound into a strategic axis. Adding XP also doubles the FTUE budget — a new player would need to learn *both* economies in their first match. Reject on elegance smell #2 (*simplicity*) and skill barrier (Ch. 3).
+- **Model D (hybrid)** is attractive in theory but has *no canonical lineage* (so players cannot reuse genre conventions), *no proven tuning*, and creates two simultaneous resource pools to track in a 25-second timer. Reject on *reuses conventions* and *similar scale*.
+
+#### What we are giving up by picking Model A
+
+Worth naming honestly:
+
+- **FTUE complexity premium.** A new player must internalize "Charge carries over + interest exists + streaks exist" within their first 1-2 matches. This is real cognitive load. Mitigation: the tutorial (§8) introduces these mechanics one per round in match 1.
+- **Hoard-and-stall risk.** An aggressively-saving player might *never spend* until R4-R5, eating R1-R3 losses to maximize endgame. This is the analog of TFT's "fast 9" strategy. Mitigation: the round-by-round modifier-slot unlock structure (R2 slot 1, R3 slot 2, R4 upgrades) makes early Charge useful even if hoarded. A player hoarding through R1-R2 doesn't lose access to the R3 modifier slot — they enter R3 with extra Charge to spend on it. This makes hoarding a *legitimate strategy*, not a degenerate one — the design's answer to "lose R1 to bank Charge" is "yes, that's a real strategy, and the opponent must also plan for it."
+- **A small interest math overhead each round.** The player mentally computes "1 Charge per 5 banked" each prep phase. ~2 seconds of cognitive load. Acceptable; the calculation is visible in the UI (interest tier shows as "+2 next round").
+
+#### The chosen currency
 
 **Single currency: "Charge."** Chosen for fiction-mechanics fit (the balls are kinetic; they carry charge), one syllable for chat/UI, and clear plural form ("3 Charge").
+
+❓ **Playtest target on the model itself, not just the numbers:** If after 200 hours of playtest >25% of players never engage with the interest mechanic (they always spend to zero), Model A is over-designed for the audience and Model B should be re-evaluated.
 
 ### 1.3 Earning structure
 
